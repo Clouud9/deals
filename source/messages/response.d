@@ -4,9 +4,7 @@ import std.typecons;
 import mir.serde;
 import std.variant;
 
-class Response : Message {
-    string jsonrpc;
-    
+class Response : Message {    
     //@serdeOptional
     //Nullable!int id; // Can be string too, just use int for now
     int id;

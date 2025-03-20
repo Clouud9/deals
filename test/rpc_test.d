@@ -25,6 +25,9 @@ struct Example {
 
 unittest {
     testEncode();
+}
+
+unittest {
     testDecode();
 }
 

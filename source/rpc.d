@@ -5,32 +5,13 @@ import core.stdc.stdlib;
 import asdf;
 import std.array;
 import std.logger;
+import std.string;
 
 string encodeMessage(T)(T message) {
     // Error Checking using JSONException // Go's marshal function returns a byte arr
     string data = message.serializeToJson();
     data = "Content-Length: " ~ data.length.to!string ~ "\r\n\r\n" ~ data;
     return data;
-
-    /*
-    string jsonString;
-    try {
-        JSONValue jsonData = message.toJSON();
-        jsonString = jsonData.toString;
-        writeln("Serialized JSON: ", jsonString);
-    } catch (JSONException e) {
-        writeln("Error serializing JSON: ", e.message);
-        exit(1);
-    } catch (Exception e) {
-        writeln("An unexpected error occurred: ", e.message);
-        exit(1);
-    } 
-
-    auto header = "Content-Length: " ~ jsonString.length.to!string ~ "\r\n\r\n";
-    auto finalMessage = header ~ jsonString;
-
-    return finalMessage;
-    */
 }
 
 // NOTE: Temporary out params for testing(?)
@@ -39,7 +20,6 @@ void decodeMessage(string message, out string method, out string content) {
     auto data = message.split(sep);
 
     // If the string doesn't have the separator, then the array is just an array w/ the string as the only entry
-    
     string header = data[0];
     content = data[1];
 

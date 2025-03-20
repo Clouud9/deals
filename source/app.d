@@ -12,7 +12,7 @@ import core.stdc.stdlib : exit;
 import rpc;
 
 static this() {
-	auto file = File("deals.log", "w");
+	auto file = File("C://Users/l_sne/Base/Projects/D/deals/deals.log", "w"); // change to a in production
 	sharedLog = cast(shared) new FileLogger(file);
 }
 
@@ -33,10 +33,11 @@ version (unittest) {
 
 			writeln("HEADER: ", header);
 			writeln("JSON: ", json);
-
+			string message = header.strip ~ "\r\n\r\n" ~ json;
+			string method, content;
 			//string message, method, content;
-			//decodeMessage(message, method, content); // Implement Error Handling for this function
-
+			decodeMessage(message, method, content); // Implement Error Handling for this function
+			handleMessage(method, content); // Initialize has \r\n in nvim
 		}
 
 		return 0;
@@ -44,7 +45,7 @@ version (unittest) {
 }
 
 void handleMessage(string method, string content) {
-	stderr.writeln("Received Message With Method: ", method);
+	stderr.write("Received Message With Method: ", method);
 	log("Received Message With Method: ", method);
 }
 
@@ -65,7 +66,7 @@ bool read_message(out string header, out string JSON) {
 
 		if (line_cpy.strip.startsWith("Content-Length: ")) {
 			if (content_length != 0) {
-				// Error Log, two Content-Length Headers
+				log("Another Content Length Previously Found");
 			}
 
 			string num;
@@ -76,52 +77,6 @@ bool read_message(out string header, out string JSON) {
 		}
 
 		if (line_cpy.strip.empty()) {
-			break;
-		}
-	}
-
-	if (content_length > (1 << 30)) {
-		log("Content Length is too long");
-		return false;
-	} else if (content_length == 0) {
-		log("Missing Header or Message Length of 0");
-		return false;
-	}
-
-	char[] bytes = new char[content_length];
-	fread(bytes.ptr, char.sizeof, content_length, stdin.getFP);
-	JSON = cast(string) bytes;
-	return true;
-}
-
-bool readLoop(out string header, out string JSON) {
-	ulong content_length;
-
-	while (true) {
-		if ((header = readln()) == null || stdin.eof) {
-			return false;
-		}
-
-		if (header.length == 0 || header.strip.length == 0) {
-			log("No Message");
-			return false;
-		}
-
-		string line_cpy;
-		if (header.strip.startsWith("#"))
-			continue;
-
-		if (header.strip.startsWith("Content-Length: ")) {
-			if (content_length != 0)
-				log("Previous Content Length Found: ", content_length);
-
-			// Can use chompPrefix
-			line_cpy = header.strip["Content-Length: ".length .. $];
-			content_length = to!ulong(line_cpy);
-			continue;
-		}
-
-		if (line_cpy.strip.empty) {
 			break;
 		}
 	}
