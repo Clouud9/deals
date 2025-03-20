@@ -23,6 +23,7 @@ version (unittest) {
 } else {
 	int main() {
 		log("Starting Deals");
+		bool initialize_received = false;
 
 		while (true) {
 			string header, json;

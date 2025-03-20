@@ -1,10 +1,11 @@
-module messages.response;
-import messages.message;
+module types.messages.response;
+import types.messages.message;
 import std.typecons;
 import mir.serde;
 import std.variant;
 
-class Response : Message {    
+struct Response {    
+    mixin MessageType;
     //@serdeOptional
     //Nullable!int id; // Can be string too, just use int for now
     int id;
