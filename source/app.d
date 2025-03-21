@@ -8,6 +8,9 @@ import std.string;
 import std.logger;
 import core.stdc.stdio : fgets;
 import core.stdc.stdlib : exit;
+import asdf;
+import asdf.serialization;
+import mir.serde;
 
 import rpc;
 
@@ -47,6 +50,8 @@ version (unittest) {
 
 void handleMessage(string method, string content) {
 	stderr.write("Received Message With Method: ", method);
+	import core.time, core.thread;
+	Thread.sleep(msecs(3)); // Makes it so that newline isn't ignored 
 	log("Received Message With Method: ", method);
 }
 

@@ -1,77 +1,58 @@
 module types.messages.request;
 import types.messages.message;
-//import std.typecons;
-//import std.variant;
-import mir.algebraic;
-import std.range;
+import std.typecons;
+import std.variant;
+import std.json;
+import std.container.array;
+import std.stdio;
 
-//import mir.algebraic;
-import mir.serde;
-import asdf.serialization;
+class Request : Message {
+    JSONValue method;
+    JSONValue id;
+    JSONValue params = JSONValue.init;
 
-struct Request {
-    mixin MessageType;
-    int id;
-    string method;
+    this(JSONValue json) {
+        if (request_is_valid(json) == false)
+            throw new Exception("Request passed invalid JSON");
+        super(json);
 
-    @serdeOptional
-    @serdeIgnoreOutIf!((Nullable!(string, int) s) => s.isNull)
-    Nullable!(string, int) params;
+        method = json.object["method"];
+        id     = json.object["id"];
+
+        if (request_has_params(json))
+            params = json["params"];
+    }
 }
 
+// TODO: Check for Valid Types
+bool request_is_valid(JSONValue json) {
+    if (message_is_valid(json) == false)
+        return false;
+    else if ("method" !in json)
+        return false;
+    else if ("id" !in json)
+        return false;
+    else return true;
+}
+
+bool request_has_params(JSONValue json) {
+    if ("params" !in json) 
+        return false;
+    else return true;
+}
+
+JSONType request_get_params_type(JSONValue json) {
+    return json.type;
+}
+
+// TODO: Exception if params don't exist
+JSONValue request_get_params(JSONValue json) {
+    return json["params"];
+}
 
 unittest {
-    import asdf;
-    import std.stdio;
-
-    /** 
-     * Test One
-     */
-    Request request = Request();
-    request.id = 5;
-    request.method = "test";
-
-    string jsonOne = "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"test\"}";
-    string errOne = "Request with null params failed to serialize";
-    assert(request.serializeToJson() == jsonOne, errOne);
-
-    /** 
-     * Test Two
-     */
-    request.params = "testter";
-    string jsonTwo = "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"test\",\"params\":\"testter\"}";
-    string errTwo = "Request with non-null params failed to serialize";
-    assert(request.serializeToJson() == jsonTwo, errTwo);
-
-    /** 
-     * Test Three
-     */
-    Request req = jsonTwo.deserialize!Request;
-    if (
-        req.jsonrpc != "2.0"    ||
-        req.id != 5             ||
-        req.method != "test"    ||
-        req.params != "testter"
-    ) {
-        assert(false, "Failed to deserialize JSON with non-null params");
-    }
-    
-    /** 
-     * Test Four
-     */
-    Request secondRequest = Request();
-    secondRequest.id = 6;
-    secondRequest.method = "nullTest";
-
-    string json = secondRequest.serializeToJson();
-    Request newReq =  json.deserialize!Request;
-    if (
-        newReq.jsonrpc != "2.0"      ||
-        newReq.id      != 6          ||
-        newReq.method  != "nullTest" ||
-        newReq.params  != null
-    ) {
-        writeln(newReq.params);
-        assert(false, "Failed to deserialize JSON with null params");
-    }
+    string jsonString = `{"jsonrpc":"2.0","id":1,"method":"initialize","params":null}`;
+    JSONValue json = parseJSON(jsonString);
+    Request request = new Request(json);
+    writeln(request.root.toString);
 }
