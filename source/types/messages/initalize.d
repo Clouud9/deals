@@ -2,77 +2,45 @@ module types.messages.initalize;
 import types.messages.request;
 import std.json;
 
-// TODO: Check for valid types
-bool init_is_init_request(JSONValue json) {
-    if (json["method"].str == "initalize")
-        return true;
-    else return false;
-}
+// TODO: Finish Implementing Constructor And Params Fields.
+class InitializeRequest : Request {
+    JSONValue processID;
+    JSONValue clientInfo;
+    JSONValue locale;
+    JSONValue rootPath;
+    JSONValue rootURI;
+    JSONValue initializationOptions;
+    JSONValue capabilities;
+    JSONValue trace;
+    JSONValue workspaceFolders;
 
-// Not Root JSON, need to get params if they exist and then go.
-bool init_is_valid_request(JSONValue json) {
-    JSONValue params = request_get_params(json);
-    if (init_is_init_request(json) == false)
-        return false;
-    else if ("processID" !in params)
-        return false;
-    else if ("rootURI" !in params)
-        return false;
-    else if ("capabilities" !in params)
-        return false;
-    else return true;
-}
+    this(JSONValue json) {
+        super(json);
+        JSONValue params = json["params"];
+        assert(params.type == JSONType.object, "Initialization JSON has non-object params");
 
-bool init_has_client_info(JSONValue json) {
-    JSONValue params = request_get_params(json);
-    if ("clientInfo" in params) 
-        return true;
-    else return false;
-}
+        assert("processID"    !in params ||
+               "capabilities" !in params ||
+               "rootUri"      !in params,
+               "Missing Mandatory Parameters"
+        );
 
-bool init_has_client_version(JSONValue json) {
-    JSONValue params = request_get_params(json);
-    if (init_has_client_info(json) == false) 
-        return false;
+        processID = params["processId"];
+        capabilities = params["capabilities"];
+        rootURI = params["rootUri"];
 
-    JSONValue clientInfo = params["clientInfo"].object;
-    if ("version" !in clientInfo) 
-        return false;
-    else return true;
-}
+        if ("clientInfo" in params) {
+            clientInfo = params["clientInfo"];
+            assert(clientInfo.type == JSONType.object, "clientInfo is invalid type");
+            assert("name" in clientInfo, "clientInfo missing name");
+            assert(clientInfo["name"].type == JSONType.string, "clientInfo's name is invalid type");
 
-bool init_has_locale(JSONValue json) {
-    JSONValue params = request_get_params(json);
-    if ("locale" !in params)
-        return false;
-    else return true;
-}
+            if ("version" in clientInfo) {
+                assert(clientInfo["version"].type == JSONType.string, "clientInfo's version is invalid type");
+            }            
+        }
 
-bool init_has_root_path(JSONValue json) {
-    JSONValue params = request_get_params(json);
-    if ("rootPath" !in params)
-        return false;
-    else return true;
-}
+        
 
-bool init_has_init_options(JSONValue json) {
-    JSONValue params = request_get_params(json);
-    if ("initializationOptions" !in params) 
-        return false;
-    else return true;
-}
-
-bool init_has_trace(JSONValue json) {
-    JSONValue params = request_get_params(json);
-    if ("trace" !in params) 
-        return false;
-    else return true;
-}
-
-// TODO: Move to own section?
-bool work_progress_params_has_token(JSONValue json) {
-    JSONValue params = request_get_params(json);
-    if ("workDoneToken" !in json)
-        return true;
-    else return false;
+    }
 }
