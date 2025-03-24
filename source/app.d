@@ -33,15 +33,14 @@ version (unittest) {
 			if (!read)
 				continue; // Not sure this is what I want to do
 
-			writeln("HEADER: ", header);
-			writeln("JSON: ", json);
+			//writeln("HEADER: ", header);
+			//writeln("JSON: ", json);
 			string message = header.strip ~ "\r\n\r\n" ~ json;
 			string method, content;
 			//string message, method, content;
 			decodeMessage(message, method, content); // Implement Error Handling for this function
 			handleMessage(method, content); // Initialize has \r\n in nvim
 		}
-
 		return 0;
 	}
 }
@@ -53,19 +52,22 @@ void handleMessage(string method, string content) {
 	log("Received Message With Method: ", method);
 
 	JSONValue requestJSON = parseJSON(content);
-
 	// Temporarily to test response
-	if (method.strip == "initialize") {
+	if (method == "initialize") {
+		log("initialization thing");
 		JSONValue json = JSONValue.emptyObject;
-		json["id"] = JSONValue(requestJSON["id"].integer);
+		json["id"] = JSONValue(1);
 		json["result"] = JSONValue.emptyObject;
 		json["result"]["capabilities"] = JSONValue.emptyObject;
+
 		json["result"]["serverInfo"] = JSONValue.emptyObject;
 		json["result"]["serverInfo"]["name"] = JSONValue("deals");
 		json["result"]["serverInfo"]["version"] = JSONValue("v0.1");
-		// json["result"]["serverInfo"] = JSONValue.emptyObject;
-		stdout.write(json.toString);
-		stderr.writeln(json.toString);
+		auto header = "Content-Length: " ~ to!string(json.toString.length) ~ "\r\n\r\n";
+		string output = header ~ json.toString;
+		stdout.rawWrite(output);
+	} else if (method == "shutdown") {
+		exit(0);
 	}
 }
 

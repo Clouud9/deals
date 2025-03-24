@@ -40,7 +40,7 @@ void testEncode() {
         string form = format("Expected: %s, Actual: %s\n", expected, actual);
         assert(false, form);
     } else {
-        writeln("Encoding Test Passed");
+        //writeln("Encoding Test Passed");
     }
 }
 
