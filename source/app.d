@@ -8,11 +8,9 @@ import std.string;
 import std.logger;
 import core.stdc.stdio : fgets;
 import core.stdc.stdlib : exit;
-import asdf;
-import asdf.serialization;
-import mir.serde;
 
 import rpc;
+import std.json;
 
 static this() {
 	auto file = File("C://Users/l_sne/Base/Projects/D/deals/deals.log", "w"); // change to a in production
@@ -51,8 +49,24 @@ version (unittest) {
 void handleMessage(string method, string content) {
 	stderr.write("Received Message With Method: ", method);
 	import core.time, core.thread;
-	Thread.sleep(msecs(3)); // Makes it so that newline isn't ignored 
+	Thread.sleep(msecs(5)); // Makes it so that newline isn't ignored 
 	log("Received Message With Method: ", method);
+
+	JSONValue requestJSON = parseJSON(content);
+
+	// Temporarily to test response
+	if (method.strip == "initialize") {
+		JSONValue json = JSONValue.emptyObject;
+		json["id"] = JSONValue(requestJSON["id"].integer);
+		json["result"] = JSONValue.emptyObject;
+		json["result"]["capabilities"] = JSONValue.emptyObject;
+		json["result"]["serverInfo"] = JSONValue.emptyObject;
+		json["result"]["serverInfo"]["name"] = JSONValue("deals");
+		json["result"]["serverInfo"]["version"] = JSONValue("v0.1");
+		// json["result"]["serverInfo"] = JSONValue.emptyObject;
+		stdout.write(json.toString);
+		stderr.writeln(json.toString);
+	}
 }
 
 bool read_message(out string header, out string JSON) {
