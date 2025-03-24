@@ -7,9 +7,12 @@ import rpc;
 import core.stdc.stdlib;
 
 struct Example {
+    JSONValue root;
     bool testing;
 
     this(bool isTrue) {
+        root = JSONValue.emptyObject;
+        root["testing"] = isTrue;
         testing = isTrue;
     }
 
@@ -34,7 +37,7 @@ unittest {
 void testEncode() {
     // Test example json file with example struct
     string expected = "Content-Length: 16\r\n\r\n{\"testing\":true}";
-    string actual = encodeMessage!Example(Example(true));
+    string actual = encodeMessage(Example(true).root);
 
     if (expected != actual) {
         string form = format("Expected: %s, Actual: %s\n", expected, actual);
