@@ -1,6 +1,7 @@
 module types.messages.initialize_params;
 import types.messages.wdp_params;
 import types.messages.lsp_params;
+import types.capabilities.client_capabilities;
 import std.variant;
 import std.typecons;
 import std.json;
@@ -14,7 +15,7 @@ class InitializeParams : WorkDoneProgessParams, LSPParams {
     Nullable!JSONValue initializationOptions;
     ClientCapabilities capabilities;
     Nullable!TraceValue trace;
-    Nullable!(WorkspaceFolder[]) workspaceFolders;
+    Nullable!(JSONValue) workspaceFolders;
 
     this(JSONValue params) {
         // TODO: Validate and then assign? 
@@ -58,11 +59,6 @@ class ClientInfo {
     }
 }
 
-class ClientCapabilities {
-    this(JSONValue capabilities) {
-
-    }
-}
 
 enum TraceValue : string {off = "off", messages = "messages", verbose = "verbose"}
 

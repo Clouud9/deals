@@ -15,15 +15,6 @@ struct Example {
         root["testing"] = isTrue;
         testing = isTrue;
     }
-
-    /* 
-    // TODO: This doesn't auto-serialize like Go's library does. Would have to use jsonizer, mir-ion, asdf or some other library. 
-    JSONValue toJSON() const {
-        return JSONValue([
-            "testing": JSONValue(testing)
-        ]);
-    }    
-    */
 }
 
 unittest {

@@ -39,7 +39,7 @@ version (unittest) {
 			string method, content;
 			//string message, method, content;
 			decodeMessage(message, method, content); // Implement Error Handling for this function
-			handleMessage(method, content); // Initialize has \r\n in nvim
+			handleMessage(method, content);
 		}
 		return 0;
 	}
