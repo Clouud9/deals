@@ -1,6 +1,5 @@
 module protocol.params.init;
-import protocol.base.trace;
-import protocol.base.workspace_folder;
+import protocol.base;
 import std.typecons;
 import std.json;
 
