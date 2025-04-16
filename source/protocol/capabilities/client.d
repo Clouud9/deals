@@ -302,10 +302,12 @@ struct TextDocClientCap {
     }
 }
 
+// TODO: Implement
 struct NotebookDocClientCap {
+    DocSync synchronization;
 
-}
-
-struct TextDocSyncClientCap {
-
+    struct DocSync {
+        Nullable!bool dynamicRegistration;
+        Nullable!bool executionSummarySupport;
+    }
 }

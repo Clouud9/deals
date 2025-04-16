@@ -117,3 +117,15 @@ enum CodeActionKind : string {
 enum TokenFormat : string {
     Relative = "relative"
 }
+
+enum PositionEncodingKind : string {
+    utf8  = "utf-8",
+    utf16 = "utf-16",
+    utf32 = "utf-32"
+}
+
+enum TextDocSyncKind : int {
+    None = 0, 
+    Full = 1,
+    Incremental = 2
+}
