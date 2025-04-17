@@ -264,8 +264,8 @@ struct TextDocClientCap {
         Nullable!bool augmentsSyntaxTokens;
 
         struct Requests {
-            Nullable!(SumType!(bool, EmptyObject)) range;
-            Nullable!(SumType!(bool, FullObject)) full;
+            NullableSum!(bool, EmptyObject) range;
+            NullableSum!(bool, FullObject) full;
 
             struct FullObject {
                 Nullable!bool delta;
