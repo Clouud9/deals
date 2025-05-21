@@ -5,41 +5,43 @@ import std.sumtype;
 import std.traits;
 import std.json;
 
+// Alias each type as a sumtype of it's components, then just do Nullable!Type or Optional!Type
+
 struct ServerCapabilities {
-    PositionEncodingKind positionEncoding;
-    NullableSum!(TextDocSyncOptions, TextDocSyncKind, EmptyObject) textDocumentSync;
-    NullableSum!(NotebookDocSyncOpts, NotebookDocSyncRegOpts) notebookDocumentSync;
-    Nullable!CompletionOpts completionProvider;
-    NullableSum!(bool, HoverOpts) hoverProvider;
-    Nullable!SignatureHelpOpts signatureHelpProvider;
-    NullableSum!(DeclarationOpts, DeclarationRegOpts, bool) declarationProvider;
-    NullableSum!(DefinitionOpts, bool) definitonProvider;
-    NullableSum!(TypeDefOpts, TypeDefRegOpts, bool) typeDefinitionProvider;
-    NullableSum!(ImplOpts, ImplRegOpts, bool) implementationProvider;
-    NullableSum!(RefOpts, bool) referenceOptions;
-    NullableSum!(DocHighlightOpts, bool) documentHighlightProvider;
-    NullableSum!(DocSymbolOpts, bool) documentSymbolProvider;
-    NullableSum!(CodeActionOpts, bool) codeActionProvider;
-    NullableSum!(CodeLensOpts, bool) codeLensProvider;
-    Nullable!DocLinkOpts documentLinkProvider;
-    NullableSum!(DocColorOpts, DocColorRegOpts, bool) colorProvider;
-    NullableSum!(DocFormatOpts, bool) documentFormattingProvider;
-    NullableSum!(DocRangeFormatOpts, bool) documentRangeFormattingProvider;
-    Nullable!(DocOnTypeFormatOpts) documentOnTypeFormattingProvider;
-    NullableSum!(RenameOpts, bool) renameProvider;
-    NullableSum!(FoldingRangeOpts, FoldingRangeRegOpts, bool) foldingRangeProvider;
-    Nullable!(ExecOpts) executeCommandProvider;
-    NullableSum!(SelectRangeOpts, SelectRangeRegOpts, bool) selectionRangeProvider;
-    NullableSum!(LinkEditRangeOpts, LinkEditRangeRegOpts, bool) linkedEditingRangeProvider;
-    NullableSum!(CallHierarchyOpts, CallHierarchyRegOpts, bool) callHierarchyProvider;
-    NullableSum!(SemanticTokenOpts, SemanticTokenRegOpts) semanticTokensProvider;
-    NullableSum!(MonikerOpts, MonikerRegOpts, bool) monikerProvider;
-    NullableSum!(TypeHierarchyOpts, TypeHierarchyRegOpts, bool) typeHierarchyProvider;
-    NullableSum!(InlineValueOpts, InlineValueRegOpts, bool) inlineValueProvider;
-    NullableSum!(InlayHintOpts, InlayHintRegOpts, bool) inlayHintProvider;
-    NullableSum!(DiagnosticOpts, DiagnosticRegOpts) diagonsticProvider;
-    NullableSum!(WorkSpaceSymbolOpts, bool) workspaceSymbolProvider;
-    Nullable!Workspace workspace;
+    Optional!PositionEncodingKind positionEncoding;
+    Optional!TextDocSync textDocSync;
+    Optional!NotebookDocSync notebookDocumentSync;
+    Optional!CompletionOpts completionProvider;
+    Optional!HoverProvider hoverProvider;
+    Optional!SignatureHelpOpts signatureHelpProvider;
+    Optional!DeclProvider declarationProvider;
+    Optional!DefProvider definitonProvider;
+    Optional!TypeDefProvider typeDefinitionProvider;
+    Optional!ImplProvider implementationProvider;
+    Optional!RefProvider referenceOptions;
+    Optional!DocHighlightProvider documentHighlightProvider;
+    Optional!DocSymbolProvider documentSymbolProvider;
+    Optional!CodeActionProvider codeActionProvider;
+    Optional!CodeLensProvider codeLensProvider;
+    Optional!DocLinkOpts documentLinkProvider;
+    Optional!DocColorProvider colorProvider;
+    Optional!DocFormatProvider documentFormattingProvider;
+    Optional!DocRangeFormatProvider documentRangeFormattingProvider;
+    Optional!DocOnTypeFormatOpts documentOnTypeFormattingProvider;
+    Optional!RenameProvider renameProvider;
+    Optional!FoldingRangeProvider foldingRangeProvider;
+    Optional!ExecOpts executeCommandProvider;
+    Optional!SelectionRangeProvider selectionRangeProvider;
+    Optional!LinkedEditRangeProvider linkedEditingRangeProvider;
+    Optional!CallHierarchyProvider callHierarchyProvider;
+    Optional!SemanticTokenProvider semanticTokensProvider;
+    Optional!MonikerProvider monikerProvider;
+    Optional!TypeHierarchyProvider typeHierarchyProvider;
+    Optional!InlineValueProvider inlineValueProvider;
+    Optional!InlayHintProivder inlayHintProvider;
+    Optional!DiagnosticProvider diagonsticProvider;
+    Optional!WorkspaceSymbolProvider workspaceSymbolProvider;
+    Optional!ServerWorkspace workspace;
     JSONValue experimental;
 
     struct TextDocSyncOptions {
@@ -211,7 +213,7 @@ struct ServerCapabilities {
         alias workDoneProgress = diagnosticOpts.wdpOpts.workDoneProgress;
     }
 
-    struct Workspace {
+    struct ServerWorkspace {
         Nullable!WSFolderServerCap workspaceFolders;
 
         struct FileOpts {
@@ -282,4 +284,32 @@ struct ServerCapabilities {
     alias WorkSpaceSymbolOpts = CodeLensOpts;
 
     struct EmptyObject {}
+
+    alias TextDocSync = SumType!(TextDocSyncOptions, TextDocSyncKind, EmptyObject);
+    alias NotebookDocSync = SumType!(NotebookDocSyncOpts, NotebookDocSyncRegOpts);
+    alias HoverProvider = SumType!(bool, HoverOpts);
+    alias DeclProvider = SumType!(DeclarationOpts, DeclarationRegOpts, bool);
+    alias DefProvider = SumType!(DefinitionOpts, bool);
+    alias TypeDefProvider = SumType!(TypeDefOpts, TypeDefRegOpts, bool);
+    alias ImplProvider = SumType!(ImplOpts, ImplRegOpts, bool);
+    alias RefProvider = SumType!(RefOpts, bool);
+    alias DocHighlightProvider = SumType!(DocHighlightOpts, bool);
+    alias DocSymbolProvider = SumType!(DocSymbolOpts, bool);
+    alias CodeActionProvider = SumType!(CodeActionOpts, bool);
+    alias CodeLensProvider = SumType!(CodeLensOpts, bool);
+    alias DocColorProvider = SumType!(DocColorOpts, DocColorRegOpts, bool);
+    alias DocFormatProvider = SumType!(DocFormatOpts, bool);
+    alias DocRangeFormatProvider = SumType!(DocRangeFormatOpts, bool);
+    alias RenameProvider = SumType!(RenameOpts, bool);
+    alias FoldingRangeProvider = SumType!(FoldingRangeOpts, FoldingRangeRegOpts, bool);
+    alias SelectionRangeProvider = SumType!(SelectRangeOpts, SelectRangeRegOpts, bool);
+    alias LinkedEditRangeProvider = SumType!(LinkEditRangeOpts, LinkEditRangeRegOpts, bool);
+    alias CallHierarchyProvider = SumType!(CallHierarchyOpts, CallHierarchyRegOpts, bool);
+    alias SemanticTokenProvider = SumType!(SemanticTokenOpts, SemanticTokenRegOpts);
+    alias MonikerProvider = SumType!(MonikerOpts, MonikerRegOpts, bool);
+    alias TypeHierarchyProvider = SumType!(TypeHierarchyOpts, TypeHierarchyRegOpts, bool);
+    alias InlineValueProvider = SumType!(InlineValueOpts, InlineValueRegOpts, bool);
+    alias InlayHintProivder = SumType!(InlayHintOpts, InlayHintRegOpts, bool);
+    alias DiagnosticProvider = SumType!(DiagnosticOpts, DiagnosticRegOpts);
+    alias WorkspaceSymbolProvider = SumType!(WorkSpaceSymbolOpts, bool);
 }

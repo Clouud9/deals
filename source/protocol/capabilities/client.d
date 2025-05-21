@@ -6,72 +6,205 @@ import std.parallelism;
 import std.sumtype;
 
 struct ClientCapabilities {
-    JSONValue workspace = JSONValue.emptyObject;
-    JSONValue window = JSONValue.emptyObject;
-    JSONValue general = JSONValue.emptyObject;
+    Optional!ClientWorkspace workspace;
+    Optional!WindowClientCapabilites window;
+    Optional!GeneralClientCapabilities general;
+    Optional!TextDocClientCap textDoc;
+    Optional!NotebookDocClientCap notebookDoc;
     JSONValue experiment = JSONValue.init;
-    Nullable!TextDocClientCap textDoc;
-    Nullable!NotebookDocClientCap notebookDoc;
+}
+
+// TODO: Many of these structs only have one item with the same name and type, alias this type later, or use mixins. 
+struct ClientWorkspace {
+    Optional!bool applyEdit;
+    Optional!WorkspaceEditClientCapabilities workspaceEdit;
+    Optional!DidChangeConfigClientCapabilites didChangeConfiguration;
+    Optional!DidChangeWatchedFilesClientCapabilities didChangeWatchedFiles;
+    Optional!WorkspaceSymbolClientCapabilities symbol;
+    Optional!ExecCommandClientCapabilites executeCommand;
+    Optional!bool workspaceFolders;
+    Optional!bool configuration;
+    Optional!SemanticTokensWorkspaceClientCapabilities semanticTokens;
+    Optional!CodeLensWorkspaceClientCapabilties codeLens;
+    Optional!ClientFileOperations fileOperations;
+    Optional!InlineValueWorkspaceClientCapabilities inlineValue;
+    Optional!InlayHintWorkspaceClientCapabilites inlayHint;
+    Optional!DiagnosticWorkspaceClientCapabilites diagnostic;
+
+    struct WorkspaceEditClientCapabilities {
+        Optional!bool documentChanges;
+        Optional!(ResourceOperationKind[]) resourceOperations;
+        Optional!FailureHandlingKind failureHandling;
+        Optional!bool normalizesLineEndings;
+        Optional!AnnotationSupport changeAnnotationSupport;
+
+        struct AnnotationSupport {
+            Optional!bool groupsOnLabel;
+        }
+    }
+
+    struct DidChangeConfigClientCapabilites {
+        Optional!bool dynamicRegistration;
+    }
+
+    struct DidChangeWatchedFilesClientCapabilities {
+        Optional!bool dynamicRegistration;
+        Optional!bool relativePatternSupport;
+    }
+
+    struct WorkspaceSymbolClientCapabilities {
+        Optional!bool dynamicRegistration;
+        Optional!SymbolType symbolKind;
+        Optional!TagSupport tagSupport;
+        Optional!ResolveSupport resolveSupport;
+
+        struct SymbolType {
+            Optional!(SymbolKind[]) valueSet;
+        }
+
+        struct TagSupport {
+            SymbolTag[] valueSet;
+        }
+
+        struct ResolveSupport {
+            string[] properties;
+        }
+    }
+
+    struct ExecCommandClientCapabilites {
+        Optional!bool dynamicRegistration;
+    }
+
+    struct SemanticTokensWorkspaceClientCapabilities {
+        Optional!bool refreshSupport;
+    }
+
+    struct CodeLensWorkspaceClientCapabilties {
+        Optional!bool refreshSupport;
+    }
+
+    struct ClientFileOperations {
+        Optional!bool dynmaicRegistration;
+        Optional!bool didCreate;
+        Optional!bool willCreate;
+        Optional!bool didRename;
+        Optional!bool willRename;
+        Optional!bool didDelete;
+        Optional!bool willDelete;
+    }
+
+    struct InlineValueWorkspaceClientCapabilities {
+        Optional!bool refreshSupport;
+    }
+
+    struct InlayHintWorkspaceClientCapabilites {
+        Optional!bool refreshSupport; 
+    }
+
+    struct DiagnosticWorkspaceClientCapabilites {
+        Optional!bool refreshSupport;
+    }
+}
+
+struct WindowClientCapabilites {
+    Optional!bool workDoneProgress;
+    Optional!ShowMessageRequestClientCapabilites showMessage;
+    Optional!ShowDocumentClientCapabilites showDocument;
+
+    struct ShowMessageRequestClientCapabilites {
+        Optional!MessageActionItem messageActionItem;
+
+        struct MessageActionItem {
+            Optional!bool additionalPropertiesSupport;
+        }
+    }
+
+    struct ShowDocumentClientCapabilites {
+        bool support;
+    }
+}
+
+struct GeneralClientCapabilities {
+    Optional!StaleRequestSupport staleRequestSupport;
+    Optional!RegularExpressionClientCapabilites regularExpressions;
+    Optional!MarkdownClientCapabilities markdown;
+    Optional!(PositionEncodingKind[]) positionEncodings;
+
+    struct StaleRequestSupport {
+        bool cancel;
+        string[] retryOnContentModified;
+    }
+    
+    struct RegularExpressionClientCapabilites {
+        string engine;
+        Optional!string version_str;
+    }
+
+    struct MarkdownClientCapabilities {
+        string parser;
+        Optional!string version_str;
+        Optional!(string[]) allowedTags;
+    }
 }
 
 struct TextDocClientCap {
-    Nullable!Synchronization synchronization;
-    Nullable!Completion completion;
-    Nullable!Hover hover;
-    Nullable!SignatureHelp signatureHelp;
-    Nullable!Declaration declaration;
-    Nullable!Definition definition;
-    Nullable!TypeDefinition typeDefinition;
-    Nullable!Implementation implementation;
-    Nullable!Reference reference;
-    Nullable!DocHighlight docHighlight;
-    Nullable!DocSymbol docSymbol;
-    Nullable!CodeAction codeAction;
-    Nullable!CodeLens codeLens;
-    Nullable!DocLink docLink;
-    Nullable!DocColor docColor;
-    Nullable!DocFormatting docFormatting;
-    Nullable!DocRangeFormatting docRangeFormatting;
-    Nullable!DocTypeFormatting docTypeFormatting;
-    Nullable!Rename rename;
-    Nullable!PublishDiagnostics publishDiagnostics;
-    Nullable!FoldingRange foldingRange;
-    Nullable!SelectionRange selectionRange;
-    Nullable!LinkedEditRange linkedEditRange;
-    Nullable!CallHierarchy callHierarchy;
-    Nullable!SemanticTokens semanticTokens;
-    Nullable!Moniker moniker;
-    Nullable!TypeHierarchy typeHierarchy;
-    Nullable!InlineVal inlineVal;
-    Nullable!InlayHint inlayHint;
-    Nullable!Diagnostic diagnostic;
+    Optional!Synchronization synchronization;
+    Optional!Completion completion;
+    Optional!Hover hover;
+    Optional!SignatureHelp signatureHelp;
+    Optional!Declaration declaration;
+    Optional!Definition definition;
+    Optional!TypeDefinition typeDefinition;
+    Optional!Implementation implementation;
+    Optional!Reference reference;
+    Optional!DocHighlight docHighlight;
+    Optional!DocSymbol docSymbol;
+    Optional!CodeAction codeAction;
+    Optional!CodeLens codeLens;
+    Optional!DocLink docLink;
+    Optional!DocColor docColor;
+    Optional!DocFormatting docFormatting;
+    Optional!DocRangeFormatting docRangeFormatting;
+    Optional!DocTypeFormatting docTypeFormatting;
+    Optional!Rename rename;
+    Optional!PublishDiagnostics publishDiagnostics;
+    Optional!FoldingRange foldingRange;
+    Optional!SelectionRange selectionRange;
+    Optional!LinkedEditRange linkedEditRange;
+    Optional!CallHierarchy callHierarchy;
+    Optional!SemanticTokens semanticTokens;
+    Optional!Moniker moniker;
+    Optional!TypeHierarchy typeHierarchy;
+    Optional!InlineVal inlineVal;
+    Optional!InlayHint inlayHint;
+    Optional!Diagnostic diagnostic;
 
     struct Synchronization {
-        Nullable!bool dynamicRegistrationSync;
-        Nullable!bool willSave;
-        Nullable!bool willSaveWaitUntil;
-        Nullable!bool didSave;
+        Optional!bool dynamicRegistrationSync;
+        Optional!bool willSave;
+        Optional!bool willSaveWaitUntil;
+        Optional!bool didSave;
     }
 
     struct Completion {
-        Nullable!bool dynamicRegistration;
-        Nullable!CompletionItemKind completionItemKind;
-        Nullable!bool contextSupport;
-        Nullable!bool insertTextMode;
-        Nullable!CompletionList completionList;
+        Optional!bool dynamicRegistration;
+        Optional!CompletionItemKind completionItemKind;
+        Optional!bool contextSupport;
+        Optional!bool insertTextMode;
+        Optional!CompletionList completionList;
         // TODO: Continue Implementation here
 
         struct CompletionItem {
-            Nullable!bool snippetSupport;
-            Nullable!bool commitCharactersSupport;
-            Nullable!(MarkupKind[]) documentationFormat;
-            Nullable!bool deprecatedSupport;
-            Nullable!bool preselectSupport;
-            Nullable!TagSupport tagSupport;
-            Nullable!bool insertReplaceSupport;
-            Nullable!ResolveSupport resolveSupport;
-            Nullable!InsertSupport insertSupport;
-            Nullable!bool labelDetailSupport;
+            Optional!bool snippetSupport;
+            Optional!bool commitCharactersSupport;
+            Optional!(MarkupKind[]) documentationFormat;
+            Optional!bool deprecatedSupport;
+            Optional!bool preselectSupport;
+            Optional!TagSupport tagSupport;
+            Optional!bool insertReplaceSupport;
+            Optional!ResolveSupport resolveSupport;
+            Optional!InsertSupport insertSupport;
+            Optional!bool labelDetailSupport;
 
             struct TagSupport {
                 CompletionItemTag[] valueSet;
@@ -87,87 +220,87 @@ struct TextDocClientCap {
         }
 
         struct CompletionItemKind {
-            Nullable!(CompletionItemType[]) valueSet;
+            Optional!(CompletionItemType[]) valueSet;
         }
 
         struct CompletionList {
-            Nullable!(string[]) itemDefaults;
+            Optional!(string[]) itemDefaults;
         }
     }
 
     struct Hover {
-        Nullable!bool dynamicRegistration;
-        Nullable!(MarkupKind[]) contentFormat;
+        Optional!bool dynamicRegistration;
+        Optional!(MarkupKind[]) contentFormat;
     }
 
     struct SignatureHelp {
-        Nullable!bool dynamicRegistration;
-        Nullable!SignatureInformation signatureInformation;
-        Nullable!bool contextSupport;
+        Optional!bool dynamicRegistration;
+        Optional!SignatureInformation signatureInformation;
+        Optional!bool contextSupport;
 
         struct SignatureInformation {
-            Nullable!(MarkupKind[]) documentationFormat;
-            Nullable!ParameterInformation parameterInformation;
-            Nullable!bool activeParameterSupport;
+            Optional!(MarkupKind[]) documentationFormat;
+            Optional!ParameterInformation parameterInformation;
+            Optional!bool activeParameterSupport;
 
             struct ParameterInformation {
-                Nullable!bool labelOffsetSupport;
+                Optional!bool labelOffsetSupport;
             }
         }
     }
 
     struct Declaration {
-        Nullable!bool dynamicRegistration;
-        Nullable!bool linkSupport;
+        Optional!bool dynamicRegistration;
+        Optional!bool linkSupport;
     }
 
     struct Definition {
-        Nullable!bool dynamicRegistration;
-        Nullable!bool linkSupport;
+        Optional!bool dynamicRegistration;
+        Optional!bool linkSupport;
     }
 
     struct TypeDefinition {
-        Nullable!bool dynamicRegistration;
-        Nullable!bool linkSupport;
+        Optional!bool dynamicRegistration;
+        Optional!bool linkSupport;
     }
 
     struct Implementation {
-        Nullable!bool dynamicRegistration;
-        Nullable!bool linkSupport;
+        Optional!bool dynamicRegistration;
+        Optional!bool linkSupport;
     }
 
     struct Reference {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct DocHighlight {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct DocSymbol {
-        Nullable!bool dynamicRegistration;
-        Nullable!SymbolType symbolKind;
-        Nullable!bool hierarchicalDocSymbolSupport;
-        Nullable!SymbolTagType tagSupport;
-        Nullable!bool labelSupport;
+        Optional!bool dynamicRegistration;
+        Optional!SymbolType symbolKind;
+        Optional!bool hierarchicalDocSymbolSupport;
+        Optional!SymbolTagType tagSupport;
+        Optional!bool labelSupport;
 
         struct SymbolType {
-            Nullable!(SymbolKind[]) valueSet;
+            Optional!(SymbolKind[]) valueSet;
         }
 
         struct SymbolTagType {
-            Nullable!(SymbolTag[]) valueSet;
+            Optional!(SymbolTag[]) valueSet;
         }
     }
 
     struct CodeAction {
-        Nullable!bool dynamicRegistration;
-        Nullable!LiteralSupport codeActionLiteralSupport;
-        Nullable!bool isPreferredSupport;
-        Nullable!bool disabledSupport;
-        Nullable!bool dataSupport;
-        Nullable!ResolveSupport resolveSupport;
-        Nullable!bool honorsChangeAnnotation;
+        Optional!bool dynamicRegistration;
+        Optional!LiteralSupport codeActionLiteralSupport;
+        Optional!bool isPreferredSupport;
+        Optional!bool disabledSupport;
+        Optional!bool dataSupport;
+        Optional!ResolveSupport resolveSupport;
+        Optional!bool honorsChangeAnnotation;
 
         struct LiteralSupport {
             struct ActionKind {
@@ -181,43 +314,43 @@ struct TextDocClientCap {
     }
 
     struct CodeLens {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct DocLink {
-        Nullable!bool dynamicRegistration;
-        Nullable!bool tooltipSupport;
+        Optional!bool dynamicRegistration;
+        Optional!bool tooltipSupport;
     }
 
     struct DocColor {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct DocFormatting {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct DocRangeFormatting {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct DocTypeFormatting {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct Rename {
-        Nullable!bool dynamicRegistration;
-        Nullable!bool prepareSupport;
-        Nullable!PrepSupportDefaultBehavior prepDefaultBehavior;
-        Nullable!bool honorsChangeAnnotations;
+        Optional!bool dynamicRegistration;
+        Optional!bool prepareSupport;
+        Optional!PrepSupportDefaultBehavior prepDefaultBehavior;
+        Optional!bool honorsChangeAnnotations;
     }
 
     struct PublishDiagnostics {
-        Nullable!bool relatedInformation;
-        Nullable!TagSupport tagSupport;
-        Nullable!bool versionSupport;
-        Nullable!bool codeDescriptionSupport;
-        Nullable!bool dataSupport;
+        Optional!bool relatedInformation;
+        Optional!TagSupport tagSupport;
+        Optional!bool versionSupport;
+        Optional!bool codeDescriptionSupport;
+        Optional!bool dataSupport;
 
         struct TagSupport {
             DiagnosticTag[] valueSet;
@@ -225,71 +358,74 @@ struct TextDocClientCap {
     }
 
     struct FoldingRange {
-        Nullable!bool dynamicRegistration;
-        Nullable!uint rangeLimit;
-        Nullable!bool lineFoldingOnly;
-        Nullable!FoldingRangeKind foldingRangeKind;
-        Nullable!FoldingRange foldingRange;
+        Optional!bool dynamicRegistration;
+        Optional!uint rangeLimit;
+        Optional!bool lineFoldingOnly;
+        Optional!FoldingRangeKind foldingRangeKind;
+        Optional!FoldingRange foldingRange;
 
         struct FoldingRangeKind {
-            Nullable!(FoldingRangeType[]) valueSet;
+            Optional!(FoldingRangeType[]) valueSet;
         }
 
         struct FoldingRange {
-            Nullable!bool collapsedText;
+            Optional!bool collapsedText;
         }
     }
 
     struct SelectionRange {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct LinkedEditRange {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct CallHierarchy {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct SemanticTokens {
-        Nullable!bool dynamicRegistration;
-        Nullable!Requests requests;
+        Optional!bool dynamicRegistration;
+        Optional!Requests requests;
         string[] tokenTypes;
         string[] tokenModifiers;
         TokenFormat[] formats;
-        Nullable!bool overlappingTokenSupport;
-        Nullable!bool multilineTokenSupport;
-        Nullable!bool serverCancelSupport;
-        Nullable!bool augmentsSyntaxTokens;
+        Optional!bool overlappingTokenSupport;
+        Optional!bool multilineTokenSupport;
+        Optional!bool serverCancelSupport;
+        Optional!bool augmentsSyntaxTokens;
 
         struct Requests {
-            NullableSum!(bool, EmptyObject) range;
-            NullableSum!(bool, FullObject) full;
+            Optional!Range range;
+            Optional!Full full;
 
             struct FullObject {
-                Nullable!bool delta;
+                Optional!bool delta;
             }
 
             struct EmptyObject {}
+
+            alias Range = SumType!(bool, EmptyObject);
+            alias Full = SumType!(bool, FullObject);
         }
     }
 
     struct Moniker {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct TypeHierarchy {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct InlineVal {
-        Nullable!bool dynamicRegistration;
+        Optional!bool dynamicRegistration;
     }
 
     struct InlayHint {
-        Nullable!bool dynamicRegistration;
-        Nullable!ResolveSupport resolveSupport;
+        Optional!bool dynamicRegistration;
+        Optional!ResolveSupport resolveSupport;
 
         struct ResolveSupport {
             string[] properties;
@@ -297,8 +433,8 @@ struct TextDocClientCap {
     }
 
     struct Diagnostic {
-        Nullable!bool dynamicRegistration;
-        Nullable!bool relatedDocumentSupport;
+        Optional!bool dynamicRegistration;
+        Optional!bool relatedDocumentSupport;
     }
 }
 
@@ -307,7 +443,7 @@ struct NotebookDocClientCap {
     DocSync synchronization;
 
     struct DocSync {
-        Nullable!bool dynamicRegistration;
-        Nullable!bool executionSummarySupport;
+        Optional!bool dynamicRegistration;
+        Optional!bool executionSummarySupport;
     }
 }

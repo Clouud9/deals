@@ -132,8 +132,34 @@ enum TextDocSyncKind : int {
     Incremental = 2
 }
 
+enum ResourceOperationKind : string {
+    Create = "create",
+    Rename = "rename",
+    Delete = "delete"
+}
+
+enum FailureHandlingKind : string {
+    Abort = "abort",
+    Transactional = "transactional",
+    TextOnlyTransactional = "textOnlyTransactional",
+    Undo = "undo"
+}
+
 template NullableSum(T...) {
     alias NullableSum = Nullable!(SumType!(T));
+}
+
+// For types that might not appear in the JSON File
+alias Optional = Nullable;
+
+// For types that are Nullable and Optional. Haven't decided on a chosen name yet.
+alias NullableOpt = Nullable;
+alias Maybe = Nullable; 
+alias Possible = Nullable;
+
+
+template OptionalSum(T...) {
+    alias OptionalSum = Nullable!(SumType!(T));
 }
 
 struct DocumentFilter {
