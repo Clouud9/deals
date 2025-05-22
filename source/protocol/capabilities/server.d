@@ -4,6 +4,7 @@ import std.typecons;
 import std.sumtype;
 import std.traits;
 import std.json;
+import core.stdc.stdlib;
 
 // Alias each type as a sumtype of it's components, then just do Nullable!Type or Optional!Type
 
@@ -44,9 +45,10 @@ struct ServerCapabilities {
     Optional!ServerWorkspace workspace;
     JSONValue experimental;
 
+    // TODO: Start here and move down
     struct TextDocSyncOptions {
-        Nullable!bool openClose;
-        Nullable!TextDocSyncKind change;
+        Optional!bool openClose;
+        Optional!TextDocSyncKind change;
     }
 
     template inheritWDPOpts() {
@@ -65,15 +67,16 @@ struct ServerCapabilities {
     }
 
     struct WorkDoneProgressOpts {
-        Nullable!bool workDoneProgress;
+        Optional!bool workDoneProgress;
     }
 
     struct StaticRegOpts {
-        Nullable!string id;
+        Optional!string id;
     }
 
     struct TextDocRegOpts {
-        Nullable!(DocumentFilter[]) documentSelector; // Always appears
+        alias DocumentSelector = DocumentFilter[];
+        Nullable!(DocumentSelector) documentSelector; // Always appears
     }
 
     struct TripleOpts {
@@ -81,73 +84,83 @@ struct ServerCapabilities {
         mixin inheritTDROpts;
         mixin inheritWDPOpts;
     }
+    
+    struct NotebookDocSyncOptions {
+        Selector[] notebookSelector;
+        Optional!bool save;
 
-    struct NotebookDocSyncOpts {
-        NullableSum!(string, NBFilter) notebook;
-        Nullable!(string[string]) cells;
-        Nullable!bool save;
+        alias Selector = SumType!(SelectorStruct.NotebookSelector, SelectorStruct.CellSelector);
 
-        struct NBFilter {
-            Nullable!string notebookType, scheme, pattern;
-            invariant {
-                assert(!notebookType.isNull ||
-                        !scheme.isNull ||
-                        !pattern.isNull,
-                    "NotebookFilter has all null fields");
+        struct SelectorStruct {
+            struct NotebookFilter {string notebookType; Optional!string scheme; Optional!string pattern;}
+            struct SchemeFilter   {Optional!string notebookType; string scheme; Optional!string pattern;}
+            struct PatternFilter  {Optional!string notebookType; Optional!string scheme; string pattern;}
+            alias NotebookDocumentFilter = SumType!(NotebookFilter, SchemeFilter, PatternFilter);
+
+            alias Notebook = SumType!(string, NotebookDocumentFilter);
+            struct CellStruct { string language; }
+            
+            struct NotebookSelector {
+                Notebook notebook;
+                Optional!(CellStruct[]) cells;
+            }
+
+            struct CellSelector {
+                Optional!Notebook notebook;
+                CellStruct[] cells;
             }
         }
     }
 
-    struct NotebookDocSyncRegOpts {
+    struct NotebookDocSyncRegOptions {
         mixin inheritSROpts;
-        NotebookDocSyncOpts nbDocSyncOpts;
-        alias cells = nbDocSyncOpts.cells;
-        alias save = nbDocSyncOpts.save;
-        alias notebook = nbDocSyncOpts.notebook;
+        NotebookDocSyncOptions syncOptions;
+        alias save = syncOptions.save;
+        alias notebookSelector = syncOptions.notebookSelector;
     }
 
     struct CompletionOpts {
         mixin inheritWDPOpts;
-        Nullable!(string[]) triggerCharacters;
-        Nullable!(string[]) allCommitCharacters;
-        Nullable!bool resolveProvider;
-        Nullable!CompletionItem completionItem;
+        Optional!(string[]) triggerCharacters;
+        Optional!(string[]) allCommitCharacters;
+        Optional!bool resolveProvider;
+        Optional!CompletionItem completionItem;
 
         struct CompletionItem {
-            Nullable!bool labelDetailsSupport;
+            Optional!bool labelDetailsSupport;
         }
     }
 
     struct SignatureHelpOpts {
         mixin inheritWDPOpts;
-        Nullable!(string[]) triggerCharacters;
-        Nullable!(string[]) retriggerCharacters;
+        Optional!(string[]) triggerCharacters;
+        Optional!(string[]) retriggerCharacters;
     }
 
     struct DocSymbolOpts {
         mixin inheritWDPOpts;
-        Nullable!string label;
+        Optional!string label;
     }
 
     struct CodeActionOpts {
         mixin inheritWDPOpts;
-        Nullable!(CodeActionKind[]) codeActionKinds;
-        Nullable!bool resolveProvider;
+        Optional!(CodeActionKind[]) codeActionKinds;
+        Optional!bool resolveProvider;
     }
 
     struct CodeLensOpts {
         mixin inheritWDPOpts;
-        Nullable!bool resolveProvider;
+        Optional!bool resolveProvider;
     }
 
     struct DocOnTypeFormatOpts {
         string firstTriggerCharacter;
-        Nullable!(string[]) moreTriggerCharacters;
+        Optional!(string[]) moreTriggerCharacters;
     }
 
     struct RenameOpts {
         mixin inheritWDPOpts;
-        Nullable!bool prepareProvider;
+        Optional!bool prepareProvider;
     }
 
     struct ExecOpts {
@@ -158,8 +171,11 @@ struct ServerCapabilities {
     struct SemanticTokenOpts {
         mixin inheritWDPOpts;
         TokenLegend legend;
-        NullableSum!(bool, EmptyObject) range;
-        NullableSum!(bool, FullObject) full;
+        Optional!Range range;
+        Optional!Full full;
+
+        alias Range = SumType!(bool, EmptyObject);
+        alias Full  = SumType!(bool, FullObject);
 
         struct TokenLegend {
             string[] tokenTypes, tokenModifiers;
@@ -197,7 +213,7 @@ struct ServerCapabilities {
 
     struct DiagnosticOpts {
         mixin inheritWDPOpts;
-        Nullable!string identifier;
+        Optional!string identifier;
         bool interFileDependencies;
         bool workspaceDiagnostics;
     }
@@ -214,22 +230,23 @@ struct ServerCapabilities {
     }
 
     struct ServerWorkspace {
-        Nullable!WSFolderServerCap workspaceFolders;
+        Optional!WSFolderServerCap workspaceFolders;
+        Optional!FileOperations fileOperations;
 
-        struct FileOpts {
-            Nullable!FileOpRegOpts didCreate, willCreate, 
+        struct FileOperations {
+            Optional!FileOpRegOpts didCreate, willCreate, 
                                    didRename, willRename,
                                    didDelete, willDelete;
 
             struct FileOpRegOpts {
                 struct FileOpFilter {
-                    Nullable!string scheme;
+                    Optional!string scheme;
                     FileOpPattern pattern;
 
                     struct FileOpPattern {
                         string glob;
-                        Nullable!FileOpPatternKind matches;
-                        Nullable!FileOpPatternOpts options;
+                        Optional!FileOpPatternKind matches;
+                        Optional!FileOpPatternOpts options;
 
                         enum FileOpPatternKind : string {
                             file = "file",
@@ -237,7 +254,7 @@ struct ServerCapabilities {
                         }
 
                         struct FileOpPatternOpts {
-                            Nullable!bool ignoreCase;
+                            Optional!bool ignoreCase;
                         }
                     }
                 }
@@ -245,8 +262,10 @@ struct ServerCapabilities {
         }
 
         struct WSFolderServerCap {
-            Nullable!bool supported;
-            NullableSum!(string, bool) changeNotifications;
+            Optional!bool supported;
+            Optional!ChangeNotifications changeNotifications;
+
+            alias ChangeNotifications = SumType!(string, bool);
         }
     }
 
@@ -285,8 +304,8 @@ struct ServerCapabilities {
 
     struct EmptyObject {}
 
-    alias TextDocSync = SumType!(TextDocSyncOptions, TextDocSyncKind, EmptyObject);
-    alias NotebookDocSync = SumType!(NotebookDocSyncOpts, NotebookDocSyncRegOpts);
+    alias TextDocSync = SumType!(TextDocSyncOptions, TextDocSyncKind);
+    alias NotebookDocSync = SumType!(NotebookDocSyncOptions, NotebookDocSyncRegOptions);
     alias HoverProvider = SumType!(bool, HoverOpts);
     alias DeclProvider = SumType!(DeclarationOpts, DeclarationRegOpts, bool);
     alias DefProvider = SumType!(DefinitionOpts, bool);
