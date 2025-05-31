@@ -3,10 +3,8 @@ import protocol.base;
 import std.typecons;
 import std.sumtype;
 import std.traits;
-import std.json;
+import hipjson;
 import core.stdc.stdlib;
-
-// Alias each type as a sumtype of it's components, then just do Nullable!Type or Optional!Type
 
 struct ServerCapabilities {
     Optional!PositionEncodingKind positionEncoding;
@@ -43,7 +41,7 @@ struct ServerCapabilities {
     Optional!DiagnosticProvider diagonsticProvider;
     Optional!WorkspaceSymbolProvider workspaceSymbolProvider;
     Optional!ServerWorkspace workspace;
-    JSONValue experimental;
+    Optional!JSONValue experimental;
 
     // TODO: Start here and move down
     struct TextDocSyncOptions {
@@ -52,18 +50,16 @@ struct ServerCapabilities {
     }
 
     template inheritWDPOpts() {
-        WorkDoneProgressOpts wdpOpts;
-        alias workDoneProgress = wdpOpts.workDoneProgress;
+        Optional!bool workDoneProgress;
     }
 
     template inheritSROpts() {
-        StaticRegOpts srOpts;
-        alias id = srOpts.id;
+        Optional!string id;
     }
 
     template inheritTDROpts() {
-        TextDocRegOpts tdrOpts;
-        alias documentSelector = tdrOpts.documentSelector;
+        alias DocumentSelector = DocumentFilter[];
+        Nullable!(DocumentSelector) documentSelector; // Always appears
     }
 
     struct WorkDoneProgressOpts {
@@ -89,26 +85,23 @@ struct ServerCapabilities {
         Selector[] notebookSelector;
         Optional!bool save;
 
-        alias Selector = SumType!(SelectorStruct.NotebookSelector, SelectorStruct.CellSelector);
+        alias Selector = SumType!(NotebookSelector, CellSelector);
+        alias NotebookDocumentFilter = SumType!(NotebookFilter, SchemeFilter, PatternFilter);
+        alias Notebook = SumType!(string, NotebookDocumentFilter);
 
-        struct SelectorStruct {
-            struct NotebookFilter {string notebookType; Optional!string scheme; Optional!string pattern;}
-            struct SchemeFilter   {Optional!string notebookType; string scheme; Optional!string pattern;}
-            struct PatternFilter  {Optional!string notebookType; Optional!string scheme; string pattern;}
-            alias NotebookDocumentFilter = SumType!(NotebookFilter, SchemeFilter, PatternFilter);
+        struct NotebookFilter {string notebookType; Optional!string scheme; Optional!string pattern;}
+        struct SchemeFilter   {Optional!string notebookType; string scheme; Optional!string pattern;}
+        struct PatternFilter  {Optional!string notebookType; Optional!string scheme; string pattern;}
 
-            alias Notebook = SumType!(string, NotebookDocumentFilter);
-            struct CellStruct { string language; }
-            
-            struct NotebookSelector {
-                Notebook notebook;
-                Optional!(CellStruct[]) cells;
-            }
+        struct CellStruct { string language; }
+        struct NotebookSelector {
+            Notebook notebook;
+            Optional!(CellStruct[]) cells;
+        }
 
-            struct CellSelector {
-                Optional!Notebook notebook;
-                CellStruct[] cells;
-            }
+        struct CellSelector {
+            Optional!Notebook notebook;
+            CellStruct[] cells;
         }
     }
 
@@ -194,7 +187,7 @@ struct ServerCapabilities {
         alias legend = semTokOpts.legend;
         alias range = semTokOpts.range;
         alias full = semTokOpts.full;
-        alias workDoneProgress = semTokOpts.wdpOpts.workDoneProgress;
+        alias workDoneProgress = semTokOpts.workDoneProgress;
     }
 
     struct MonikerRegOpts {
@@ -208,7 +201,7 @@ struct ServerCapabilities {
 
         InlayHintOpts inlayOpts;
         alias resolveProvider = inlayOpts.resolveProvider;
-        alias workDoneProgess = inlayOpts.wdpOpts.workDoneProgress;
+        alias workDoneProgess = inlayOpts.workDoneProgress;
     }
 
     struct DiagnosticOpts {
@@ -226,7 +219,7 @@ struct ServerCapabilities {
         alias identifier = diagnosticOpts.identifier;
         alias interFileDependencies = diagnosticOpts.interFileDependencies;
         alias workspaceDiagnostics = diagnosticOpts.workspaceDiagnostics;
-        alias workDoneProgress = diagnosticOpts.wdpOpts.workDoneProgress;
+        alias workDoneProgress = diagnosticOpts.workDoneProgress;
     }
 
     struct ServerWorkspace {
@@ -332,3 +325,31 @@ struct ServerCapabilities {
     alias DiagnosticProvider = SumType!(DiagnosticOpts, DiagnosticRegOpts);
     alias WorkspaceSymbolProvider = SumType!(WorkSpaceSymbolOpts, bool);
 }
+
+alias TextDocSync = ServerCapabilities.TextDocSync;
+alias NotebookDocSync = ServerCapabilities.NotebookDocSync;
+alias HoverProvider = ServerCapabilities.HoverProvider;
+alias DeclProvider = ServerCapabilities.DeclProvider;
+alias DefProvider = ServerCapabilities.DefProvider;
+alias TypeDefProvider = ServerCapabilities.TypeDefProvider;
+alias ImplProvider = ServerCapabilities.ImplProvider;
+alias RefProvider = ServerCapabilities.RefProvider;
+alias DocHighlightProvider = ServerCapabilities.DocHighlightProvider;
+alias DocSymbolProvider = ServerCapabilities.DocSymbolProvider;
+alias CodeActionProvider = ServerCapabilities.CodeActionProvider;
+alias CodeLensProvider = ServerCapabilities.CodeLensProvider;
+alias DocColorProvider = ServerCapabilities.DocColorProvider;
+alias DocFormatProvider = ServerCapabilities.DocFormatProvider;
+alias DocRangeFormatProvider = ServerCapabilities.DocRangeFormatProvider;
+alias RenameProvider = ServerCapabilities.RenameProvider;
+alias FoldingRangeProvider = ServerCapabilities.FoldingRangeProvider;
+alias SelectionRangeProvider = ServerCapabilities.SelectionRangeProvider;
+alias LinkedEditRangeProvider = ServerCapabilities.LinkedEditRangeProvider;
+alias CallHierarchyProvider = ServerCapabilities.CallHierarchyProvider;
+alias SemanticTokenProvider = ServerCapabilities.SemanticTokenProvider;
+alias MonikerProvider = ServerCapabilities.MonikerProvider;
+alias TypeHierarchyProvider = ServerCapabilities.TypeHierarchyProvider;
+alias InlineValueProvider = ServerCapabilities.InlineValueProvider;
+alias InlayHintProivder = ServerCapabilities.InlayHintProivder;
+alias DiagnosticProvider = ServerCapabilities.DiagnosticProvider;
+alias WorkspaceSymbolProvider = ServerCapabilities.WorkspaceSymbolProvider;

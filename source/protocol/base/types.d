@@ -150,7 +150,35 @@ template NullableSum(T...) {
 }
 
 // For types that might not appear in the JSON File
-alias Optional = Nullable;
+struct Optional(T) {
+    private Nullable!T _value;
+    alias _value this;
+
+    this(T value) {
+        _value = value;
+    }
+
+    void opAssign(T value) {
+        _value = value;
+    }
+
+    void opAssign(Optional!T other) {
+        _value = other._value;
+    }
+
+    @property toString() const {
+        return _value.toString;
+    }
+
+    @property isNull() const {
+        return _value.isNull;
+    }
+
+    @property get() {
+        return _value.get;
+    }
+}
+//alias Optional = Nullable;
 
 // For types that are Nullable and Optional. Haven't decided on a chosen name yet.
 alias NullableOpt = Nullable;

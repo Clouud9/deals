@@ -10,7 +10,11 @@ import core.stdc.stdio : fgets;
 import core.stdc.stdlib : exit;
 
 import rpc;
-import std.json;
+
+import hipjson;
+import protocol.capabilities.server;
+import protocol.base;
+import std.sumtype;
 
 static this() {
 	auto file = File("C://Users/l_sne/Base/Projects/D/deals/deals.log", "w"); // change to a in production
@@ -25,6 +29,18 @@ version (unittest) {
 	int main() {
 		log("Starting Deals");
 		bool initialize_received = false;
+
+		ServerCapabilities server;
+		server.hoverProvider = HoverProvider(false);
+		server.notebookDocumentSync = NotebookDocSync(ServerCapabilities.NotebookDocSyncOptions());
+		
+		auto nds = server.notebookDocumentSync.get;
+		nds.get!(ServerCapabilities.NotebookDocSyncOptions).save = false; // Throws if not the right type
+		server.notebookDocumentSync = nds;
+
+		JSONValue root = serialize!ServerCapabilities(server);
+		writeln(root.toString);
+		exit(0);
 
 		while (true) {
 			string header, json;
