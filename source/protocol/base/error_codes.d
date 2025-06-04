@@ -1,4 +1,4 @@
-module types.error_codes;
+module protocol.base.error_codes;
 
 // TODO: Add & Format Error Code Documentation
 enum Errors {
