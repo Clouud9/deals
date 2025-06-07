@@ -1,6 +1,6 @@
 module test.rpc_test;
 import std.format;
-import std.json;
+import hipjson;
 import std.stdio;
 import rpc;
 

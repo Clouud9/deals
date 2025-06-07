@@ -5,7 +5,7 @@ import core.stdc.stdlib;
 import std.array;
 import std.logger;
 import std.string;
-import std.json;
+import hipjson;
 
 string encodeMessage(JSONValue message) {
     // Error Checking using JSONException // Go's marshal function returns a byte arr
@@ -19,7 +19,7 @@ void decodeMessage(string message, out string method, out string content) {
     auto header_and_content = message.split(sep);
     content = header_and_content[1];
 
-    JSONValue data = std.json.parseJSON(content);
+    JSONValue data = parseJSON(content);
     method = data["method"].str;
     return;
 }

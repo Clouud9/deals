@@ -1,24 +1,16 @@
-module types.messages.request;
-import types.messages.message;
+module protocol.messages.request;
+import protocol.messages.message;
 import std.typecons;
 import std.variant;
-import std.json;
+import hipjson;
 import std.container.array;
 import std.stdio;
 
-class Request : Message {
+struct Request {
+    mixin Message;
     string method;
     JSONValue id;
     JSONValue params = JSONValue.init;
-
-    this(JSONValue json) {
-        super(json);
-        id = json["id"];
-        method = json["method"].str;
-        
-        if ("params" in json)
-            params = json["params"];
-    }
 }
 
 unittest {

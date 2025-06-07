@@ -1,19 +1,7 @@
-module types.messages.message;
+module protocol.messages.message;
 import std.variant;
-import std.json;
+import hipjson;
 
-class Message {
-    JSONValue root;
-    string jsonrpc;
-
-    this(JSONValue json) {
-        root = json;
-        jsonrpc = json["jsonrpc"].str;
-    }
-}
-
-unittest {
-    JSONValue json = JSONValue.emptyObject;
-    json.object["jsonrpc"] = JSONValue("2.0");
-    assert(json.toString == `{"jsonrpc":"2.0"}`);
+template Message() {
+    string jsonrpc = "2.0";
 }

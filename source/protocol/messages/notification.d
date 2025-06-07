@@ -1,2 +1,2 @@
-module types.messages.notification;
-import types.messages.message;
+module protocol.messages.notification;
+import protocol.messages.message;

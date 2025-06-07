@@ -1,6 +1,9 @@
 module protocol.base.types;
 import std.typecons;
 import std.sumtype;
+import std.traits;
+import std.meta;
+import hipjson;
 
 enum FoldingRangeType : string {
     Comment = "comment",
@@ -166,6 +169,16 @@ struct Optional(T) {
         _value = other._value;
     }
 
+    void opAssign(V)(V value) {
+        static if (isInstanceOf!(SumType, T)) {
+            static if (staticIndexOf!(V, T.Types) != -1) {
+                _value = T(value);
+            }
+        } else static if (is(T == JSONValue)) {
+            _value = value;
+        }
+    }
+
     @property toString() const {
         return _value.toString;
     }
@@ -184,7 +197,6 @@ struct Optional(T) {
 alias NullableOpt = Nullable;
 alias Maybe = Nullable; 
 alias Possible = Nullable;
-
 
 template OptionalSum(T...) {
     alias OptionalSum = Nullable!(SumType!(T));

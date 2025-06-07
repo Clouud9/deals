@@ -1,11 +1,11 @@
 module protocol.params.init;
 import protocol.base;
 import std.typecons;
-import std.json;
+import hipjson;
 
 struct InitParams {
     Nullable!int procId;
-    JSONValue clientInfo = JSONValue.emptyObject;
+    JSONValue clientInfo;
     Nullable!string locale;
     Nullable!string rootURI; // Useable as rootPath too
     JSONValue initOptions = JSONValue.init;

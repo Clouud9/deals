@@ -15,6 +15,7 @@ import hipjson;
 import protocol.capabilities.server;
 import protocol.base;
 import std.sumtype;
+import std.typecons;
 
 static this() {
 	auto file = File("C://Users/l_sne/Base/Projects/D/deals/deals.log", "w"); // change to a in production
@@ -29,18 +30,6 @@ version (unittest) {
 	int main() {
 		log("Starting Deals");
 		bool initialize_received = false;
-
-		ServerCapabilities server;
-		server.hoverProvider = HoverProvider(false);
-		server.notebookDocumentSync = NotebookDocSync(ServerCapabilities.NotebookDocSyncOptions());
-		
-		auto nds = server.notebookDocumentSync.get;
-		nds.get!(ServerCapabilities.NotebookDocSyncOptions).save = false; // Throws if not the right type
-		server.notebookDocumentSync = nds;
-
-		JSONValue root = serialize!ServerCapabilities(server);
-		writeln(root.toString);
-		exit(0);
 
 		while (true) {
 			string header, json;
@@ -70,20 +59,30 @@ void handleMessage(string method, string content) {
 	JSONValue requestJSON = parseJSON(content);
 	// Temporarily to test response
 	if (method == "initialize") {
-		log("initialization thing");
-		JSONValue json = JSONValue.emptyObject;
-		json["id"] = JSONValue(1);
-		json["result"] = JSONValue.emptyObject;
-		json["result"]["capabilities"] = JSONValue.emptyObject;
+		log("initialization");
 
-		json["result"]["serverInfo"] = JSONValue.emptyObject;
-		json["result"]["serverInfo"]["name"] = JSONValue("deals");
-		json["result"]["serverInfo"]["version"] = JSONValue("v0.1");
+		import protocol.messages.response;
+		import protocol.messages.results.initialize_result;
+		Response initResponse;
+		initResponse.id = Nullable!(Response.ResponseID)(Response.ResponseID(1));
+		InitializeResult result;
+		result.capabilities = ServerCapabilities();
+		result.serverInfo = InitializeResult.ServerInfo();
+		result.serverInfo.get.name = "deals";
+		result.serverInfo.get.version_ = "0.1";
+		result.capabilities.textDocSync = TextDocSyncKind.Full;
+		initResponse.result = serialize(result);
+
+		JSONValue json = serialize(initResponse);
+
 		auto header = "Content-Length: " ~ to!string(json.toString.length) ~ "\r\n\r\n";
 		string output = header ~ json.toString;
 		stdout.rawWrite(output);
+		log("Initialization Response Sent");
 	} else if (method == "shutdown") {
 		exit(0);
+	} else if (method == "initialized") {
+		// Can use this to dynamically register capabilities
 	}
 }
 
