@@ -1,4 +1,4 @@
-module protocol.params.init;
+module protocol.messages.params.init;
 import protocol.base;
 import std.typecons;
 import hipjson;

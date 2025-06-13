@@ -8,7 +8,7 @@ import core.stdc.stdlib;
 
 struct ServerCapabilities {
     Optional!PositionEncodingKind positionEncoding;
-    Optional!TextDocSync textDocSync;
+    Optional!TextDocSync textDocumentSync; // Change back to textDocSync after adding UDA support to declare what a thing should be serialized to 
     Optional!NotebookDocSync notebookDocumentSync;
     Optional!CompletionOpts completionProvider;
     Optional!HoverProvider hoverProvider;

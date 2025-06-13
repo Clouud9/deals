@@ -14,6 +14,7 @@ import rpc;
 import hipjson;
 import protocol.capabilities.server;
 import protocol.base;
+import protocol.actions;
 import std.sumtype;
 import std.typecons;
 
@@ -70,11 +71,9 @@ void handleMessage(string method, string content) {
 		result.serverInfo = InitializeResult.ServerInfo();
 		result.serverInfo.get.name = "deals";
 		result.serverInfo.get.version_ = "0.1";
-		result.capabilities.textDocSync = TextDocSyncKind.Full;
+		result.capabilities.textDocumentSync = TextDocSyncKind.Full;
 		initResponse.result = serialize(result);
-
 		JSONValue json = serialize(initResponse);
-
 		auto header = "Content-Length: " ~ to!string(json.toString.length) ~ "\r\n\r\n";
 		string output = header ~ json.toString;
 		stdout.rawWrite(output);
@@ -83,6 +82,12 @@ void handleMessage(string method, string content) {
 		exit(0);
 	} else if (method == "initialized") {
 		// Can use this to dynamically register capabilities
+	} else if (method == "textDocument/didOpen") {
+		// This should be moved since it has more than params
+		import protocol.messages.params.text_doc_did_open;
+		auto notification = DidOpenTextDocumentNotification(method, content);
+		log(format("Opened: %s", notification.params.textDocument.uri));
+		// Can Print Contents Later
 	}
 }
 
