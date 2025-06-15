@@ -60,11 +60,12 @@ if (is(T : string)) {
 }
 
 JSONValue serialize(T)(T value) 
-if (is(T == struct) &&
-    !isInstanceOf!(Optional, T) &&
-    !isInstanceOf!(Nullable, T) &&
-    !isInstanceOf!(SumType, T)  &&
-    !is(T == JSONValue)
+if ((is(T == struct) || is(T == class)) &&
+    !isInstanceOf!(Optional, T)         &&
+    !isInstanceOf!(Nullable, T)         &&
+    !isInstanceOf!(SumType, T)          &&
+    !is(T == JSONValue)                 &&
+    !is(T == interface)
 ) {
     JSONValue json = JSONValue.emptyObject;
     alias fields = FieldNameTuple!T;
@@ -79,5 +80,40 @@ if (is(T == struct) &&
             json[field_name.strip("_")] = serialize(field_val);
     }}
 
+    return json;
+}
+
+// Template to get all nested classes in an interface
+template getNestedClasses(T) if (is(T == interface)) {
+    import std.meta : Filter;
+    
+    template isNestedClass(string name) {
+        enum isNestedClass = is(__traits(getMember, T, name) == class);
+    }
+    
+    alias getNestedClasses = Filter!(isNestedClass, __traits(allMembers, T));
+}
+
+JSONValue serialize(T)(T value) 
+if (is(T == interface)) {
+    JSONValue json = JSONValue.emptyObject;
+    
+    // Try to cast to each nested class and serialize if successful
+    static foreach (className; getNestedClasses!T) {
+        {
+            alias ClassType = __traits(getMember, T, className);
+            if (auto castedValue = cast(ClassType)value) {
+                // Serialize all fields of the concrete class
+                static foreach (fieldName; FieldNameTuple!ClassType) {
+                    json[fieldName] = serializeValue(__traits(getMember, castedValue, fieldName));
+                }
+                
+                return json; // Early return once we find the right type
+            }
+        }
+    }
+    
+    // If we get here, the cast failed for all types
+    json["__error"] = JSONValue("Unknown concrete type");
     return json;
 }

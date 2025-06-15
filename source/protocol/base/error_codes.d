@@ -1,7 +1,8 @@
 module protocol.base.error_codes;
 
+alias Error = Errors;
 // TODO: Add & Format Error Code Documentation
-enum Errors {
+enum Errors : long {
     ParseError     = -32_700,
     InvalidRequest = -32_600,
     MethodNotFound = -32_601,

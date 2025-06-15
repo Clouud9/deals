@@ -14,7 +14,7 @@ import rpc;
 import hipjson;
 import protocol.capabilities.server;
 import protocol.base;
-import protocol.actions;
+import analysis.state;
 import std.sumtype;
 import std.typecons;
 
@@ -31,6 +31,7 @@ version (unittest) {
 	int main() {
 		log("Starting Deals");
 		bool initialize_received = false;
+		auto state = State();
 
 		while (true) {
 			string header, json;
@@ -45,13 +46,13 @@ version (unittest) {
 			string method, content;
 			//string message, method, content;
 			decodeMessage(message, method, content); // Implement Error Handling for this function
-			handleMessage(method, content);
+			handleMessage(method, content, state);
 		}
 		return 0;
 	}
 }
 
-void handleMessage(string method, string content) {
+void handleMessage(string method, string content, ref State state) {
 	stderr.write("Received Message With Method: ", method);
 	import core.time, core.thread;
 	Thread.sleep(msecs(5)); // Makes it so that newline isn't ignored 
@@ -88,6 +89,15 @@ void handleMessage(string method, string content) {
 		auto notification = DidOpenTextDocumentNotification(method, content);
 		log(format("Opened: %s", notification.params.textDocument.uri));
 		// Can Print Contents Later
+	} else if (method == "textDocument/didChange") {
+		import protocol.messages.params.text_doc_did_change;
+		auto notification = DidChangeTextDocumentNotification(method, content);
+		foreach(item; notification.params.contentChanges) {
+			auto event = cast(ChangeEventSingle) item;
+			state.updateDocument(notification.params.textDocument.uri, event.text);
+		}
+
+		log(format("Changed: %s", notification.params.textDocument.uri));
 	}
 }
 

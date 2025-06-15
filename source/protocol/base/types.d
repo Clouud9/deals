@@ -205,3 +205,22 @@ template OptionalSum(T...) {
 struct DocumentFilter {
     Nullable!string language, scheme, pattern;
 }
+
+mixin template TextDocumentIdentifierMix() {
+    string uri;
+}
+
+struct VersionedTextDocumentIdentifier {
+    mixin TextDocumentIdentifierMix;
+    long version_;
+}
+
+struct Position {
+    ulong line;
+    ulong character;
+}
+
+struct Range {
+    Position start;
+    Position end; 
+}
