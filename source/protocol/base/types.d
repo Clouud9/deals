@@ -64,9 +64,9 @@ enum DiagnosticTag {
     Deprecated = 2
 }
 
-enum MarkupKind {
-    Plaintext,
-    Markdown
+enum MarkupKind : string {
+    Plaintext = "plaintext",
+    Markdown = "markdown"
 }
 
 enum InsertTextMode {
@@ -177,6 +177,10 @@ struct Optional(T) {
         } else static if (is(T == JSONValue)) {
             _value = value;
         }
+    }
+
+    void nullify() {
+        _value.nullify();
     }
 
     @property toString() const {

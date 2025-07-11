@@ -5,3 +5,7 @@ import hipjson;
 mixin template Message() {
     string jsonrpc = "2.0";
 }
+
+class MessageClass {
+    string jsonrpc = "2.0";
+}

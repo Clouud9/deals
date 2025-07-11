@@ -38,7 +38,24 @@ class ChangeEventMulti : TextDocumentContentChangeEvent {
     Optional!ulong rangeLength;
 }
 
-class ChangeEventSingle : TextDocumentContentChangeEvent {
-
-}
+class ChangeEventSingle : TextDocumentContentChangeEvent {}
 // TODO: Need TextDocumentChangeRegistrationOptions and associated types
+
+
+// TODO: Put all textDocument params and methods into one file
+
+struct DidCloseTextDocumentNotification {
+    mixin Notification;
+    DidCloseTextDocumentParams params;
+    
+    this(string method, string contents) {
+        this.method = method;
+        JSONValue json = parseJSON(contents);
+        params.textDocument = json["params"]["textDocument"].str;
+    }
+}
+
+struct DidCloseTextDocumentParams {
+    import protocol.messages.params.text_doc_did_open;
+    string textDocument;
+}

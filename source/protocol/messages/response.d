@@ -20,3 +20,12 @@ struct ResponseError {
     string message;
     Optional!JSONValue data;
 }
+
+mixin template ResponseType() {
+    mixin Message;
+    Nullable!ResponseID id;
+    Optional!JSONValue result;
+    Optional!ResponseError error; // Might change to Variant
+
+    alias ResponseID = SumType!(string, int);
+}

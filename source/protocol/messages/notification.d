@@ -6,3 +6,4 @@ mixin template Notification() {
     string method;
     Optional!JSONValue params = JSONValue.init;
 }
+

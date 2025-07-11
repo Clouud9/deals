@@ -18,6 +18,11 @@ if (isInstanceOf!(SumType, T)) {
     return value.match!serialize;
 }
 
+JSONValue serialize(T)(T value) 
+if (is(T == void)) {
+    return JSONValue(null);
+}
+
 JSONValue serialize(T)(T value)
 if (is(T : long) && is(T == enum)) {
     return JSONValue(value);

@@ -17,6 +17,7 @@ import protocol.base;
 import analysis.state;
 import std.sumtype;
 import std.typecons;
+import util;
 
 static this() {
 	auto file = File("C://Users/l_sne/Base/Projects/D/deals/deals.log", "w"); // change to a in production
@@ -55,6 +56,7 @@ version (unittest) {
 void handleMessage(string method, string content, ref State state) {
 	stderr.write("Received Message With Method: ", method);
 	import core.time, core.thread;
+
 	Thread.sleep(msecs(5)); // Makes it so that newline isn't ignored 
 	log("Received Message With Method: ", method);
 
@@ -65,6 +67,7 @@ void handleMessage(string method, string content, ref State state) {
 
 		import protocol.messages.response;
 		import protocol.messages.results.initialize_result;
+
 		Response initResponse;
 		initResponse.id = Nullable!(Response.ResponseID)(Response.ResponseID(1));
 		InitializeResult result;
@@ -73,6 +76,7 @@ void handleMessage(string method, string content, ref State state) {
 		result.serverInfo.get.name = "deals";
 		result.serverInfo.get.version_ = "0.1";
 		result.capabilities.textDocumentSync = TextDocSyncKind.Full;
+		result.capabilities.hoverProvider = true;
 		initResponse.result = serialize(result);
 		JSONValue json = serialize(initResponse);
 		auto header = "Content-Length: " ~ to!string(json.toString.length) ~ "\r\n\r\n";
@@ -86,18 +90,32 @@ void handleMessage(string method, string content, ref State state) {
 	} else if (method == "textDocument/didOpen") {
 		// This should be moved since it has more than params
 		import protocol.messages.params.text_doc_did_open;
+
 		auto notification = DidOpenTextDocumentNotification(method, content);
+		state.openDocument(notification.params.textDocument.uri, notification
+				.params.textDocument.text);
 		log(format("Opened: %s", notification.params.textDocument.uri));
 		// Can Print Contents Later
 	} else if (method == "textDocument/didChange") {
 		import protocol.messages.params.text_doc_did_change;
+
 		auto notification = DidChangeTextDocumentNotification(method, content);
-		foreach(item; notification.params.contentChanges) {
+		foreach (item; notification.params.contentChanges) {
 			auto event = cast(ChangeEventSingle) item;
 			state.updateDocument(notification.params.textDocument.uri, event.text);
 		}
 
 		log(format("Changed: %s", notification.params.textDocument.uri));
+	} else if (method == "textDocument/didClose") {
+		import protocol.messages.params.text_doc_did_change;
+
+		auto notification = DidCloseTextDocumentNotification(method, content);
+		string uri = notification.params.textDocument;
+		state.closeDocument(uri);
+	} else if (method == "textDocument/hover") {
+		log(content.toPrettyString());
+		import protocol.messages.types.hover;
+		
 	}
 }
 
