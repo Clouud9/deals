@@ -13,6 +13,7 @@ import rpc;
 
 import hipjson;
 import protocol.capabilities.server;
+import protocol.messages.response;
 import protocol.base;
 import analysis.state;
 import std.sumtype;
@@ -65,20 +66,20 @@ void handleMessage(string method, string content, ref State state) {
 	if (method == "initialize") {
 		log("initialization");
 
-		import protocol.messages.response;
 		import protocol.messages.results.initialize_result;
 
-		Response initResponse;
-		initResponse.id = Nullable!(Response.ResponseID)(Response.ResponseID(1));
-		InitializeResult result;
-		result.capabilities = ServerCapabilities();
-		result.serverInfo = InitializeResult.ServerInfo();
-		result.serverInfo.get.name = "deals";
-		result.serverInfo.get.version_ = "0.1";
-		result.capabilities.textDocumentSync = TextDocSyncKind.Full;
-		result.capabilities.hoverProvider = true;
-		initResponse.result = serialize(result);
-		JSONValue json = serialize(initResponse);
+		Response response;
+		response.id = new SumType!(string, int, typeof(null))(1);
+		JSONValue result = JSONValue.emptyObject();
+		result["serverInfo"] = JSONValue.emptyObject();
+		result["capabilities"] = JSONValue.emptyObject();
+		result["serverInfo"]["name"] = "deals";
+		result["serverInfo"]["version"] = "0.1";
+		result["capabilities"]["textDocumentSync"] = JSONValue(TextDocSyncKind.Full);
+		result["capabilities"]["hoverProvider"] = JSONValue(true);
+		response.result = new JSONValue();
+		*response.result = result;
+		JSONValue json = response.serialize();
 		auto header = "Content-Length: " ~ to!string(json.toString.length) ~ "\r\n\r\n";
 		string output = header ~ json.toString;
 		stdout.rawWrite(output);
@@ -92,8 +93,7 @@ void handleMessage(string method, string content, ref State state) {
 		import protocol.messages.params.text_doc_did_open;
 
 		auto notification = DidOpenTextDocumentNotification(method, content);
-		state.openDocument(notification.params.textDocument.uri, notification
-				.params.textDocument.text);
+		state.openDocument(notification.params.textDocument.uri, notification.params.textDocument.text);
 		log(format("Opened: %s", notification.params.textDocument.uri));
 		// Can Print Contents Later
 	} else if (method == "textDocument/didChange") {
@@ -114,8 +114,26 @@ void handleMessage(string method, string content, ref State state) {
 		state.closeDocument(uri);
 	} else if (method == "textDocument/hover") {
 		log(content.toPrettyString());
-		import protocol.messages.types.hover;
-		
+		JSONValue params = requestJSON["params"];
+		int id = requestJSON["id"].integer();
+
+		string uri = params["textDocument"]["uri"].str();
+
+		Position position;
+		position.line 	   = params["position"]["line"].integer();
+		position.character = params["position"]["character"].integer();
+
+		string result = state.serveHover(uri, position);
+
+		Response response;
+		response.id = new SumType!(string, int, typeof(null))(id);
+		response.result = new JSONValue(JSONValue.emptyObject);
+		(*response.result)["contents"] = JSONValue(result);
+		JSONValue json = response.serialize();
+		// TODO: Implement function to automatically write header and such
+		auto header = "Content-Length: " ~ to!string(json.toString.length) ~ "\r\n\r\n";
+		string output = header ~ json.toString;
+		stdout.rawWrite(output);
 	}
 }
 

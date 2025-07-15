@@ -23,8 +23,6 @@ struct State {
 // Return Error? 
 void openDocument(ref State state, string uri, string text) {
     import std.stdio;
-    stderr.writeln("TESTING");
-    stderr.writeln(text);
     state.documents[uri] = text;
 }
 
@@ -81,6 +79,8 @@ string serveHover(ref State state, string uri, Position position) {
             token.loc.charnum <= position.character &&
             token.loc.charnum + token.toString().length > position.character
         ) {
+            TOK tok = cast(TOK) token.value;
+            TOK token2 = TOK.onScopeSuccess;
             return token.toString().to!string;
         }
     }

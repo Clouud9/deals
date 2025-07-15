@@ -51,7 +51,7 @@ struct DidCloseTextDocumentNotification {
     this(string method, string contents) {
         this.method = method;
         JSONValue json = parseJSON(contents);
-        params.textDocument = json["params"]["textDocument"].str;
+        params.textDocument = json["params"]["textDocument"]["uri"].str();
     }
 }
 

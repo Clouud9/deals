@@ -8,8 +8,8 @@ import std.sumtype;
 
 struct Response {
     mixin Message;
-    Nullable!ResponseID id;
-    Optional!JSONValue result;
+    SumType!(string, int, typeof(null))* id;
+    JSONValue* result;
     Optional!ResponseError error; // Might change to Variant
 
     alias ResponseID = SumType!(string, int);

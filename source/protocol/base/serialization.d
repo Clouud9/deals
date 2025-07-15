@@ -78,7 +78,10 @@ if ((is(T == struct) || is(T == class)) &&
         auto field_val = __traits(getMember, value, field_name);
         alias FieldType = typeof(field_val);
 
-        static if (isInstanceOf!(Optional, FieldType)) {
+        static if (isPointerToSumType!FieldType || isPointerToJSONValue!FieldType) {
+            if (field_val != null) 
+                json[field_name.strip("_")] = serialize(*field_val);
+        } else static if (isInstanceOf!(Optional, FieldType)) {
             if (!field_val.isNull)
                 json[field_name.strip("_")] = serialize(field_val);
         } else
@@ -86,6 +89,22 @@ if ((is(T == struct) || is(T == class)) &&
     }}
 
     return json;
+}
+
+template isPointerToSumType(T) {
+    static if (isPointer!T) {
+        enum isPointerToSumType = is(PointerTarget!T : SumType!Args, Args...);
+    } else {
+        enum isPointerToSumType = false;
+    }
+}
+
+template isPointerToJSONValue(T) {
+    static if (isPointer!T) {
+        enum isPointerToJSONValue = is(PointerTarget!T : JSONValue);
+    } else {
+        enum isPointerToJSONValue = false;
+    }
 }
 
 // Template to get all nested classes in an interface

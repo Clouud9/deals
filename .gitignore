@@ -19,3 +19,4 @@ deals-test-*
 *.txt
 *.dll
 source_copy
+.vs
