@@ -20,3 +20,4 @@ deals-test-*
 *.dll
 source_copy
 .vs
+debug.natvis

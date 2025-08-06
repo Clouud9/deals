@@ -66,7 +66,7 @@ void handleMessage(string method, string content, ref State state) {
 	if (method == "initialize") {
 		log("initialization");
 
-		import protocol.messages.results.initialize_result;
+		state.initializeState(requestJSON);
 
 		Response response;
 		response.id = new SumType!(string, int, typeof(null))(1);

@@ -12,7 +12,3 @@ struct Request {
     JSONValue id;
     JSONValue params = JSONValue.init;
 }
-
-unittest {
-
-}
