@@ -35,6 +35,16 @@ version (unittest) {
 		bool initialize_received = false;
 		auto state = State();
 
+		/*
+		debug {
+			import core.sys.windows.windows;
+			import core.thread, core.time;
+			while (IsDebuggerPresent() == false) {
+				Thread.sleep(msecs(5));
+			}
+		}
+		*/
+
 		while (true) {
 			string header, json;
 			bool read = read_message(header, json);

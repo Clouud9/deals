@@ -9,6 +9,21 @@ import std.string;
 import std.algorithm;
 import std.logger;
 import util;
+import dmd.frontend;
+import std.string;
+import std.stdio;
+import std.algorithm;
+import std.array;
+import dub.dub;
+import dub.dependency;
+import dub.package_;
+import dub.generators.build;
+import dub.recipe.packagerecipe;
+import dub.packagemanager;
+import dub.project;
+import dub.internal.vibecompat.inet.path;
+import std.algorithm.iteration;
+import std.range;
 
 enum SessionType {
     Single,
@@ -21,6 +36,8 @@ struct State {
     string[string] documents;
     string project_root;
     bool is_dub_project;
+    string[] import_paths;
+    string[] source_paths;
 }
 
 // Return Error? 
@@ -46,31 +63,67 @@ void analyze(ref State state) {
 }
 
 void initializeState(ref State state, JSONValue json) {
+    initDMD();
+    auto phobos_paths = findImportPaths();
+    foreach(path; phobos_paths)
+        addImport(path);
+
     // TODO: Base Path should be determined by where the dub file is, later
     state.project_root = json["params"]["rootPath"].str();
     string dub_root = findProjectRoot(state.project_root);
 
     if (dub_root != null) {
-        log("DUB ROOT: " ~ dub_root);
+        stderr.writeln("DUB ROOT: " ~ dub_root);
         state.project_root = dub_root;
+        state.is_dub_project = true;
         state.configureDubProject();
+        foreach(path; chain(state.import_paths, state.source_paths))
+            addImport(path);
     } else {
-        log("No dub project found");
+        stderr.writeln("No dub project found");
     }
 }
 
+/** 
+ * Adds the source paths and import paths to the state,
+ *  so that these can be later added to the dmd path
+ */
 void configureDubProject(ref State state) {
-    import dub.dub;
-    import dub.dependency;
-    import dub.package_;
-    import dub.generators.build;
-    import dub.recipe.packagerecipe;
-
     auto pkg = new Dub(state.project_root);
     pkg.loadPackage();
+    Project project = pkg.project();
+    Package rootPackage = project.rootPackage();
+    const PackageRecipe recipe = rootPackage.rawRecipe();
+    auto dependencyList = recipe.dependencies;
+    PackageManager pm = pkg.packageManager();
 
-    auto project = pkg.project;
-    const Package[] packages = project.dependencies();
+    foreach (string depName, Dependency dep; dependencyList) {
+        dep.visit!(
+            (VersionRange vr) { 
+                Package pk = pm.getBestPackage(PackageName(depName), vr); 
+                NativePath path = pk.path();
+                /* 
+                 * TODO: Add null check later, and may want to consider using NativePath data structure anyways, 
+                 *  to differentiate between local and absolute paths
+                 */
+                state.import_paths ~= path.toNativeString();
+            },
+            (NativePath np) { state.import_paths ~= np.toNativeString(); },
+            // I do not expect a repository URL to work right now, I will handle it later
+            (Repository rp) { state.import_paths ~= rp.remote(); assert(0, "Repository Support will come later"); } 
+        );
+    }
+
+    /** 
+     * The `string` key seems to represent what type of configuration is desired. 
+     *  Will deal with that later.
+     */
+    const string[][string] sourcePaths = recipe.sourcePaths;
+    foreach(const string[] paths; sourcePaths) {
+        foreach (string path; paths) {
+            state.source_paths ~= (state.project_root ~ "\\" ~ path);
+		}
+    }
 }
 
 string hoverRequest(ref State state, string uri, Position position) {
@@ -78,55 +131,77 @@ string hoverRequest(ref State state, string uri, Position position) {
 }
 
 string serveHover(ref State state, string uri, Position position) {
-    import dmd.lexer;
-    import dmd.compiler;
-    import dmd.errorsink;
-    import std.conv : to;
-    import dmd.globals;
-    import dmd.tokens;
-    import dmd.identifier;
+    auto mod = parseModule(uri, state.documents[uri]);
+    fullSemantic(mod.module_);
+    /*
+    auto id = Identifier.idPool(uri);
+    auto m = new ASTBase.Module(&(uri.dup)[0], id, false, false);
+    auto input = state.documents[uri] ~ "\0";
 
-    global._init();
+    scope p = new Parser!ASTBase(m, input, false, new ErrorSinkStderr(), null, false);
+    p.nextToken();
+    m.members = p.parseModule();
 
-    // Will have to deal with working around errors later. 
-    Lexer lexer = new Lexer(
-        uri.to!(char[]).ptr, // const(char)* filename
-        state.documents[uri].toStringz, // const(char)* base  
-        0, // ulong begoffset
-        state.documents[uri].length, // ulong endoffset
-        true, // bool doDocComment
-        true, // bool commentToken
-        true, // bool whitespaceToken
-        new ErrorSinkNull(), // ErrorSink errorSink
-        &global.compileEnv // const(CompileEnv*) compileEnv  
-    );
+    scope vis = new ImportVisitor2!ASTBase();
+    m.accept(vis);
+    */
 
-    Token token;
-    string new_str;
-    while (token.value != TOK.endOfFile) {
-        lexer.scan(&token);
+    return "";
+}
 
-        // Get actual token text
-        string tokenText;
-        if (token.value == TOK.identifier && token.ident) {
-            tokenText = token.ident.toString().to!string;
-        } else {
-            continue;
-        }
+import dmd.visitor;
+import dmd.visitor.permissive;
+import dmd.visitor.parsetime;
+import dmd.visitor.transitive;
 
-        new_str ~= tokenText ~ "\n";
+extern (C++) class ImportVisitor(AST) : PermissiveVisitor!AST {
+    alias visit = PermissiveVisitor!AST.visit;
 
-        if (token.loc.linnum == (position.line + 1)) {
-            uint tokenStart = token.loc.charnum;
-            uint tokenEnd = tokenStart + cast(uint) tokenText.length;
-            uint cursorPos = cast(uint)(position.character + 1); // Adjust for 0/1-based indexing
-
-            // Check if cursor is WITHIN the token bounds
-            if (cursorPos >= tokenStart && cursorPos <= tokenEnd) {
-                return tokenText;
-            }
+    override void visit(AST.Module m) {
+        foreach (s; *m.members) {
+            s.accept(this);
         }
     }
 
-    return "";
+    override void visit(AST.Import i) {
+        import std.stdio;
+
+        stderr.writefln("import %s", i.toString());
+    }
+
+    override void visit(AST.ImportStatement s) {
+        foreach (imp; *s.imports) {
+            imp.accept(this);
+        }
+    }
+}
+
+extern (C++) class ImportVisitor2(AST) : ParseTimeTransitiveVisitor!AST {
+    import std.stdio;
+
+    alias visit = ParseTimeTransitiveVisitor!AST.visit;
+
+    override void visit(AST.Import imp) {
+        if (imp.isstatic)
+            stderr.writef("static ");
+
+        stderr.writef("import ");
+
+        foreach (const pid; imp.packages)
+            stderr.writef("%s.", pid.toString());
+
+        stderr.writef("%s", imp.id.toString());
+
+        if (imp.names.length) {
+            stderr.writef(" : ");
+            foreach (const i, const name; imp.names) {
+                if (i)
+                    stderr.writef(", ");
+                stderr.writef("%s", name.toString());
+            }
+        }
+
+        stderr.writef(";");
+        stderr.writef("\n");
+    }
 }
