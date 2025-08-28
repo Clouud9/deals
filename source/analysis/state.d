@@ -16,7 +16,6 @@ import std.algorithm;
 import std.array;
 import dub.dub;
 import dub.dependency;
-import dub.package_;
 import dub.generators.build;
 import dub.recipe.packagerecipe;
 import dub.packagemanager;
@@ -24,6 +23,12 @@ import dub.project;
 import dub.internal.vibecompat.inet.path;
 import std.algorithm.iteration;
 import std.range;
+import dmd.astbase;
+import analysis.hover;
+import dmd.root.string : toCString;
+import dmd.dmodule;
+import dmd.dsymbol;
+import dmd.location;
 
 enum SessionType {
     Single,
@@ -84,11 +89,25 @@ void initializeState(ref State state, JSONValue json) {
     }
 }
 
+void resetDMD(ref State state) {
+    if (!state.is_dub_project) {
+        deinitializeDMD();
+        initDMD();
+    } else {
+        deinitializeDMD();
+        initDMD();
+        foreach(path; chain(state.import_paths, state.source_paths))
+            addImport(path);
+    } 
+}
+
 /** 
  * Adds the source paths and import paths to the state,
  *  so that these can be later added to the dmd path
  */
 void configureDubProject(ref State state) {
+    import dub.package_;
+
     auto pkg = new Dub(state.project_root);
     pkg.loadPackage();
     Project project = pkg.project();
@@ -122,17 +141,25 @@ void configureDubProject(ref State state) {
     foreach(const string[] paths; sourcePaths) {
         foreach (string path; paths) {
             state.source_paths ~= (state.project_root ~ "\\" ~ path);
-		}
+        }
     }
 }
 
-string hoverRequest(ref State state, string uri, Position position) {
-    return "";
-}
-
 string serveHover(ref State state, string uri, Position position) {
-    auto mod = parseModule(uri, state.documents[uri]);
-    fullSemantic(mod.module_);
+    state.resetDMD();
+
+    // TODO: Only add if not already added as a module. Otherwise will produce error.
+    auto modTuple = parseModule(uri.normalizeUri(), state.documents[uri]);
+    Module mod = modTuple.module_;
+    mod.clearCache();
+
+    Position* pos = findIdentifierAt(state, position, uri);
+    stderr.writef("POS NULL?: %s", pos is null);
+
+    //fullSemantic(mod);
+    //auto vis = new HoverVisitor(position, uri.normalizeUri.toCString().ptr);
+    //mod.accept(vis);
+
     /*
     auto id = Identifier.idPool(uri);
     auto m = new ASTBase.Module(&(uri.dup)[0], id, false, false);
@@ -149,10 +176,10 @@ string serveHover(ref State state, string uri, Position position) {
     return "";
 }
 
-import dmd.visitor;
-import dmd.visitor.permissive;
-import dmd.visitor.parsetime;
-import dmd.visitor.transitive;
+// TODO: Check if this works for Windows, Linux, etc.
+string normalizeUri(string uri) {
+    return uri.stripLeft("file:///").asNormalizedPath().array;
+}
 
 extern (C++) class ImportVisitor(AST) : PermissiveVisitor!AST {
     alias visit = PermissiveVisitor!AST.visit;
