@@ -58,7 +58,7 @@ Position* findIdentifierAt(ref State state, Position pos, string uri) {
 
             // Check if cursor is WITHIN the token bounds
             if (cursorPos >= tokenStart && cursorPos <= tokenEnd) {
-                stderr.write(token.toString());
+                //stderr.write(token.toString());
                 return new Position(token.loc.linnum, token.loc.charnum);
             }
         }
@@ -78,12 +78,14 @@ extern (C++) class IdentifierVisitor(AST) : ParseTimeTransitiveVisitor!AST {
     }
 
     override void visit(AST.Module m) {
+        /*
         foreach (s; *m.members) {
             if (stop)
                 break;
             else
                 s.accept(this);
         }
+        */
     }
 
     override void visit(AST.TemplateExp t) {
@@ -119,8 +121,11 @@ extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
     alias visit = SemanticTimeTransitiveVisitor.visit;
 
     override void visit(ASTCodegen.Module m) {
-        foreach (s; *m.members)
-            s.accept(this);
+        foreach (s; *m.members) {
+            // Does not need to iterate over every other module in the AST, so ignore them for now
+            if (s.isModule())
+                s.accept(this);
+        }
     }
 
     override void visit(ASTCodegen.Expression e) {

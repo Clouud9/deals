@@ -99,6 +99,10 @@ void resetDMD(ref State state) {
         foreach(path; chain(state.import_paths, state.source_paths))
             addImport(path);
     } 
+
+    auto phobos_paths = findImportPaths();
+    foreach(path; phobos_paths)
+        addImport(path);
 }
 
 /** 
@@ -148,17 +152,20 @@ void configureDubProject(ref State state) {
 string serveHover(ref State state, string uri, Position position) {
     state.resetDMD();
 
+    Position* pos = findIdentifierAt(state, position, uri);
+    // stderr.writef("POS NULL?: %s", pos is null);
+
+    if (pos is null) // No identifier found at location, so no reason to continue
+        return "";
+
     // TODO: Only add if not already added as a module. Otherwise will produce error.
     auto modTuple = parseModule(uri.normalizeUri(), state.documents[uri]);
     Module mod = modTuple.module_;
-    mod.clearCache();
+    // mod.clearCache();
 
-    Position* pos = findIdentifierAt(state, position, uri);
-    stderr.writef("POS NULL?: %s", pos is null);
-
-    //fullSemantic(mod);
-    //auto vis = new HoverVisitor(position, uri.normalizeUri.toCString().ptr);
-    //mod.accept(vis);
+    fullSemantic(mod);
+    auto vis = new HoverVisitor(position, uri.normalizeUri.toCString().ptr);
+    mod.accept(vis);
 
     /*
     auto id = Identifier.idPool(uri);
