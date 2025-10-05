@@ -1,0 +1,25 @@
+{
+    "authors": [
+        "Clouudy"
+    ],
+    "configurations": [
+        {
+            "name": "debug",
+            "targetType": "executable",
+            "buildOptions": ["debugInfoC"]
+        }
+    ],
+    "copyright": "Copyright © 2025, Clouudy",
+    "dependencies": {
+        "dmd": "~>2.111.0",
+        "dub": "~>1.40.0"
+    },
+    "description": "A Language Server based on the DMD Frontend",
+    "license": "BSL-1.0",
+    "name": "deals",
+    "sourcePaths": [
+        "test",
+        "source"
+    ],
+    "targetType": "executable"
+}
