@@ -1,5 +1,6 @@
 module analysis.hover;
 
+import core.memory;
 import dmd.visitor;
 import dmd.dsymbol;
 import dmd.expression;
@@ -24,10 +25,19 @@ import dmd.parse;
 import dmd.lexer;
 import std.string;
 import dmd.tokens;
-import std.stdio;
 import dmd.globals;
+import std.typetuple;
+import dmd.identifier;
+import core.time, core.thread;
+import std.algorithm;
+import std.logger;
 
-Position* findIdentifierAt(ref State state, Position pos, string uri) {
+static this() {
+    auto file = File("deals.log", "w"); // change to a in production
+    sharedLog = cast(shared) new FileLogger(file);
+}
+
+Tuple!(Identifier, "ident", Loc, "loc")* findIdentifierAt(ref State state, Position pos, string uri) {
     Lexer lexer = new Lexer(
         uri.to!(char[]).ptr, // const(char)* filename
         state.documents[uri].toStringz, // const(char)* base  
@@ -47,7 +57,8 @@ Position* findIdentifierAt(ref State state, Position pos, string uri) {
         string tokenText;
         if (token.value == TOK.identifier && token.ident) {
             tokenText = token.ident.toString().to!string;
-        } else {
+        }
+        else {
             continue;
         }
 
@@ -59,7 +70,10 @@ Position* findIdentifierAt(ref State state, Position pos, string uri) {
             // Check if cursor is WITHIN the token bounds
             if (cursorPos >= tokenStart && cursorPos <= tokenEnd) {
                 //stderr.write(token.toString());
-                return new Position(token.loc.linnum, token.loc.charnum);
+                // auto final_pos = new Position(token.loc.linnum, token.loc.charnum);
+                Loc loc = token.loc;
+                Identifier ident = token.ident;
+                return new Tuple!(Identifier, "ident", Loc, "loc")(ident, loc);
             }
         }
 
@@ -68,50 +82,11 @@ Position* findIdentifierAt(ref State state, Position pos, string uri) {
     return null;
 }
 
-extern (C++) class IdentifierVisitor(AST) : ParseTimeTransitiveVisitor!AST {
-    alias visit = ParseTimeTransitiveVisitor!AST.visit;
-    Position position;
-    bool stop = false;
-
-    this(Position pos) {
-        this.position = pos;
-    }
-
-    override void visit(AST.Module m) {
-        /*
-        foreach (s; *m.members) {
-            if (stop)
-                break;
-            else
-                s.accept(this);
-        }
-        */
-    }
-
-    override void visit(AST.TemplateExp t) {
-
-    }
-
-    override void visit(AST.CallExp c) {
-
-    }
-
-    override void visit(AST.VarExp v) {
-
-    }
-
-    override void visit(AST.DotIdExp d) {
-
-    }
-
-    override void visit(AST.DotTemplateInstanceExp d) {
-
-    }
-}
-
 extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
     Position position;
     char* uri;
+    bool stop = false;
+    Dsymbol sym;
 
     this(Position pos, char* uri) {
         this.position = pos;
@@ -120,14 +95,100 @@ extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
 
     alias visit = SemanticTimeTransitiveVisitor.visit;
 
+    /** 
+     * Only local checks for now, likely don't need them
+     *  since types contain references to their parent modules anyways
+     */
     override void visit(ASTCodegen.Module m) {
-        foreach (s; *m.members) {
-            // Does not need to iterate over every other module in the AST, so ignore them for now
-            if (s.isModule())
-                s.accept(this);
+        if (m.members) {
+            foreach (s; *m.members) {
+                if (stop)
+                    return;
+
+                if (!s.isModule() && !s.isAnonymous())
+                    s.accept(this);
+            }
         }
     }
 
+    /** 
+     * For Class, Enum, Interface, etc. types found in parameters,
+     *  and for identifiers inside of the function
+     */
+    override void visit(ASTCodegen.FuncDeclaration fd) {
+        if (fd.parameters) {
+            foreach (p; *fd.parameters) {
+                if (stop)
+                    return;
+                p.accept(this);
+            }
+        }
+
+        fd.fbody.accept(this);
+    }
+
+    override void visit(ASTCodegen.VarDeclaration vd) {
+        if (vd.loc.linnum == position.line &&
+            vd.loc.charnum == position.character
+        ) {
+            sym = vd;
+            stop = true;
+        }
+    }
+
+    /*
+    override void visit(ASTCodegen.Dsymbol s) {
+        stderr.write("SYMBOL VISIT " ~ s.ident.toString());
+        if (s.loc.linnum == position.line &&
+            s.loc.charnum == position.character
+        ) {
+            sym = s;
+            stop = true;
+        }
+    }
+
+    override void visit(ASTCodegen.ScopeDsymbol ss) {
+        stderr.rawWrite("Scope Symbol Vist");
+        foreach (member; *ss.members) {
+            if (ss.loc.linnum == position.line &&
+                ss.loc.charnum == position.character
+            ) {
+                sym = ss;
+                stop = true;
+            }
+        }
+    }
+
+    override void visit(ASTCodegen.VarDeclaration vd) {
+        if (vd.ident !is null)
+            //stderr.write(vd.ident.toString());
+
+        Thread.sleep(5.msecs);
+    }
+
+    override void visit(ASTCodegen.FuncDeclaration fd) {
+        stderr.rawWrite("FUNC " ~ fd.ident.toString());
+        if (fd.type && fd.type.isTypeFunction()) {
+            auto tf = fd.type.isTypeFunction();
+            
+        }
+
+        fd.fbody.accept(this);
+    }
+
+    override void visit(ASTCodegen.IfStatement s) {
+        stderr.rawWrite("IF STATEMENT");
+    }
+
+    override void visit(ASTCodegen.Parameter p) {
+        stderr.rawWrite("PARAM VISIT");
+        if (p.ident !is null) 
+            stderr.write(p.ident.toString());
+        Thread.sleep(5.msecs);
+    }
+    */
+
+    /*
     override void visit(ASTCodegen.Expression e) {
         if (e.type !is null)
             stderr.write(e.toString() ~ ": " ~ e.type.kind()
@@ -136,5 +197,31 @@ extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
         import core.time, core.thread;
 
         Thread.sleep(msecs(5)); // Makes it so that newline isn't ignored 
+    }
+    */
+}
+
+extern (C++) class IdentifierVisitor : SemanticTimeTransitiveVisitor {
+    alias visit = SemanticTimeTransitiveVisitor.visit;
+
+    override void visit(ASTCodegen.Module m) {
+        if (m.members) {
+            foreach (Dsymbol s; *m.members) {
+                if (!s.isModule() && !s.isAnonymous())
+                    s.accept(this);
+            }
+        }
+    }
+
+    override void visit(ASTCodegen.FuncDeclaration fd) {
+        logf("%s %d", fd.ident.toString(), fd.ident.getValue());
+        foreach(pair; fd.localsymtab.tab.asRange()) {
+            auto s = pair.value; 
+            logf("%s %d", s.ident.toString(), s.ident.getValue());
+        }
+    }
+
+    override void visit(ASTCodegen.VarDeclaration vd) {
+        logf("%s %d", vd.ident.toString(), vd.ident.getValue());
     }
 }

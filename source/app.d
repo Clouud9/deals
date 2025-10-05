@@ -21,7 +21,7 @@ import std.typecons;
 import util;
 
 static this() {
-    auto file = File("C://Users/l_sne/Base/Projects/D/deals/deals.log", "w"); // change to a in production
+    auto file = File("deals.log", "w"); // change to a in production
     sharedLog = cast(shared) new FileLogger(file);
 }
 
@@ -33,7 +33,7 @@ version (unittest) {
     int main() {
         log("Starting Deals");
         bool initialize_received = false;
-        auto state = State();
+        State state;
 
         /*
         debug {
@@ -65,18 +65,18 @@ version (unittest) {
 }
 
 void handleMessage(string method, string content, ref State state) {
-    stderr.write("Received Message With Method: ", method);
+    log("Received Message With Method: ", method);
     import core.time, core.thread;
 
     Thread.sleep(msecs(5)); // Makes it so that newline isn't ignored 
-    log("Received Message With Method: ", method);
+    // log("Received Message With Method: ", method);
 
     JSONValue requestJSON = parseJSON(content);
     // Temporarily to test response
     if (method == "initialize") {
         log("initialization");
 
-        state.initializeState(requestJSON);
+        state = State(requestJSON);
 
         Response response;
         response.id = new SumType!(string, int, typeof(null))(1);
@@ -104,7 +104,7 @@ void handleMessage(string method, string content, ref State state) {
 
         auto notification = DidOpenTextDocumentNotification(method, content);
         state.openDocument(notification.params.textDocument.uri, notification.params.textDocument.text);
-        log(format("Opened: %s", notification.params.textDocument.uri));
+        //log(format("Opened: %s", notification.params.textDocument.uri));
         // Can Print Contents Later
     } else if (method == "textDocument/didChange") {
         import protocol.messages.params.text_doc_did_change;
@@ -115,7 +115,7 @@ void handleMessage(string method, string content, ref State state) {
             state.updateDocument(notification.params.textDocument.uri, event.text);
         }
 
-        log(format("Changed: %s", notification.params.textDocument.uri));
+        //log(format("Changed: %s", notification.params.textDocument.uri));
     } else if (method == "textDocument/didClose") {
         import protocol.messages.params.text_doc_did_change;
 
@@ -123,7 +123,7 @@ void handleMessage(string method, string content, ref State state) {
         string uri = notification.params.textDocument;
         state.closeDocument(uri);
     } else if (method == "textDocument/hover") {
-        log(content.toPrettyString());
+        //log(content.toPrettyString());
         JSONValue params = requestJSON["params"];
         int id = requestJSON["id"].integer();
 
