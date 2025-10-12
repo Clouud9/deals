@@ -85,6 +85,7 @@ void analyze(ref State state) {
 
 string serveHover(ref State state, string uri, Position position) {
     state.resetDMD();
+    uint errorCount = global.startGagging();
     logf("Hover at Position: Line %d, Char %d", position.line, position.character);
 
     auto result = findIdentifierAt(state, position, uri);
@@ -107,6 +108,7 @@ string serveHover(ref State state, string uri, Position position) {
         logf("Symbol %s found", vis.sym.ident.toString());
     else logf("Symbol %s not found", result.ident.toString());
 
+    global.endGagging(errorCount);
     return "";
 }
 
