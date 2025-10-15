@@ -109,6 +109,10 @@ string serveHover(ref State state, string uri, Position position) {
     else logf("Symbol %s not found", result.ident.toString());
 
     global.endGagging(errorCount);
+
+    import dmd.root.string;
+    if (vis.sym && vis.sym.comment())
+        return cast(string) vis.sym.comment().toDString().strip();
     return "";
 }
 

@@ -136,69 +136,28 @@ extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
         }
     }
 
-    /*
-    override void visit(ASTCodegen.Dsymbol s) {
-        stderr.write("SYMBOL VISIT " ~ s.ident.toString());
-        if (s.loc.linnum == position.line &&
-            s.loc.charnum == position.character
-        ) {
-            sym = s;
-            stop = true;
-        }
-    }
+    override void visit(ASTCodegen.Expression e) {
+        // May put this at the end if binary/other expressions could get triggered like this
+        if (e.loc.linnum == position.line && e.loc.charnum == position.character) {
+            int derefCount;
 
-    override void visit(ASTCodegen.ScopeDsymbol ss) {
-        stderr.rawWrite("Scope Symbol Vist");
-        foreach (member; *ss.members) {
-            if (ss.loc.linnum == position.line &&
-                ss.loc.charnum == position.character
-            ) {
-                sym = ss;
+            if (auto varDecl = e.expToVariable(derefCount)) {
+                sym = varDecl;
                 stop = true;
             }
+        } else if (auto binExp = e.isBinExp()) {
+            binExp.e1.accept(this);
+            binExp.e2.accept(this);   
+        } else if (auto assignExp = e.isAssignExp()) {
+            assignExp.e1.accept(this);
+            assignExp.e2.accept(this);
         }
     }
+}
 
-    override void visit(ASTCodegen.VarDeclaration vd) {
-        if (vd.ident !is null)
-            //stderr.write(vd.ident.toString());
-
-        Thread.sleep(5.msecs);
-    }
-
-    override void visit(ASTCodegen.FuncDeclaration fd) {
-        stderr.rawWrite("FUNC " ~ fd.ident.toString());
-        if (fd.type && fd.type.isTypeFunction()) {
-            auto tf = fd.type.isTypeFunction();
-            
-        }
-
-        fd.fbody.accept(this);
-    }
-
-    override void visit(ASTCodegen.IfStatement s) {
-        stderr.rawWrite("IF STATEMENT");
-    }
-
-    override void visit(ASTCodegen.Parameter p) {
-        stderr.rawWrite("PARAM VISIT");
-        if (p.ident !is null) 
-            stderr.write(p.ident.toString());
-        Thread.sleep(5.msecs);
-    }
-    */
-
-    /*
-    override void visit(ASTCodegen.Expression e) {
-        if (e.type !is null)
-            stderr.write(e.toString() ~ ": " ~ e.type.kind()
-                    .toDString() ~ ": " ~ e.loc.filename().toDString());
-
-        import core.time, core.thread;
-
-        Thread.sleep(msecs(5)); // Makes it so that newline isn't ignored 
-    }
-    */
+// Add parameter for specific response format
+string buildHoverResponse(Dsymbol sym) {
+    return "";
 }
 
 extern (C++) class IdentifierVisitor : SemanticTimeTransitiveVisitor {

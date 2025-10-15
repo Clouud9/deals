@@ -6,7 +6,8 @@
         {
             "name": "debug",
             "targetType": "executable",
-            "buildOptions": ["debugInfoC"]
+            "buildOptions": [ "debugInfoC" ],
+            "dflags-ldc": ["-gdwarf"]
         }
     ],
     "copyright": "Copyright © 2025, Clouudy",
