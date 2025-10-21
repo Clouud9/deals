@@ -1,6 +1,6 @@
 module protocol.messages.params.text_doc_did_open;
 import protocol.messages.notification;
-import hipjson;
+import common.hipjson;
 import std.typecons;
 import protocol.base.types;
 

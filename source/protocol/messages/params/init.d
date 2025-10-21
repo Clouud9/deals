@@ -1,7 +1,7 @@
 module protocol.messages.params.init;
 import protocol.base;
 import std.typecons;
-import hipjson;
+import common.hipjson;
 
 struct InitParams {
     Nullable!int procId;

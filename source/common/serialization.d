@@ -1,10 +1,10 @@
-module protocol.base.serialization;
+module common.serialization;
 import protocol.base;
 import std.traits;
 import std.typecons;
 import std.sumtype;
 import protocol.capabilities.server;
-import hipjson;
+import common.hipjson;
 import std.string;
 import std.meta;
 

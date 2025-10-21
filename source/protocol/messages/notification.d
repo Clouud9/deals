@@ -1,6 +1,6 @@
 module protocol.messages.notification;
 import protocol.messages.message;
-import hipjson;
+import common.hipjson;
 
 mixin template Notification() {
     string method;

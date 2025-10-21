@@ -1,4 +1,4 @@
-module hipjson;
+module common.hipjson;
 
 JSONValue parseJSON(string jsonData)
 {

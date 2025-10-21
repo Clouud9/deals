@@ -1,14 +1,14 @@
 module analysis.state;
 import protocol.base.error_codes;
 import std.algorithm.mutation;
-import hipjson;
+import common.hipjson;
 import protocol.base;
 import std.file;
 import std.path;
 import std.string;
 import std.algorithm;
 import std.logger;
-import util;
+import common.util;
 import dmd.frontend;
 import std.string;
 import std.stdio;

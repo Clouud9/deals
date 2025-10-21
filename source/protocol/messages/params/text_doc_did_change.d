@@ -2,7 +2,7 @@ module protocol.messages.params.text_doc_did_change;
 import protocol.messages.notification;
 import protocol.base.types;
 import std.sumtype;
-import hipjson;
+import common.hipjson;
 
 struct DidChangeTextDocumentParams {
     VersionedTextDocumentIdentifier textDocument;

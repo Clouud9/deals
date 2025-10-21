@@ -3,7 +3,7 @@ import protocol.base;
 import std.typecons;
 import std.sumtype;
 import std.traits;
-import hipjson;
+import common.hipjson;
 import core.stdc.stdlib;
 
 struct ServerCapabilities {

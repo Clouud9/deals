@@ -1,4 +1,4 @@
-module util;
+module common.util;
 
 import std.file : exists;
 import std.path : buildPath, dirName, absolutePath;

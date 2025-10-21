@@ -9,16 +9,15 @@ import std.logger;
 import core.stdc.stdio : fgets;
 import core.stdc.stdlib : exit;
 
-import rpc;
-
-import hipjson;
+import common.hipjson;
 import protocol.capabilities.server;
 import protocol.messages.response;
 import protocol.base;
 import analysis.state;
 import std.sumtype;
 import std.typecons;
-import util;
+import common.util;
+import common.serialization;
 
 static this() {
     auto file = File("deals.log", "w"); // change to a in production
@@ -191,4 +190,14 @@ bool read_message(out string header, out string JSON) {
     fread(bytes.ptr, char.sizeof, content_length, stdin.getFP);
     JSON = cast(string) bytes;
     return true;
+}
+
+void decodeMessage(string message, out string method, out string content) {
+    string sep = "\r\n\r\n";
+    auto header_and_content = message.split(sep);
+    content = header_and_content[1];
+
+    JSONValue data = parseJSON(content);
+    method = data["method"].str;
+    return;
 }

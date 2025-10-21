@@ -1,7 +1,7 @@
 module protocol.capabilities.client;
 import protocol.base;
 import std.typecons;
-import hipjson;
+import common.hipjson;
 import std.parallelism;
 import std.sumtype;
 

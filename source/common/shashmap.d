@@ -1,4 +1,4 @@
-module shashmap;
+module common.shashmap;
 
 enum DefaultInitSize = 8;
 struct HashMap(K, V) {
