@@ -89,15 +89,15 @@ string serveHover(ref State state, string uri, Position position) {
     logf("Hover at Position: Line %d, Char %d", position.line, position.character);
 
     auto result = findIdentifierAt(state, position, uri);
-    logf("RESULT NULL?: %s", result is null);
+    logf("Identifier null?: %s", result is null);
 
     if (result is null) // No identifier found at location, so no reason to continue
         return "";
+    else logf("Identifier %s", result.ident.toString());
 
     // TODO: Only add if not already added as a module. Otherwise will produce error.
     auto modTuple = parseModule(uri.normalizeUri(), state.documents[uri]);
     Module mod = modTuple.module_;
-    // mod.clearCache();
 
     fullSemantic(mod);
     Position hoverPos = { line: result.loc.linnum, character: result.loc.charnum };
@@ -112,7 +112,7 @@ string serveHover(ref State state, string uri, Position position) {
 
     import dmd.root.string;
     if (vis.sym && vis.sym.comment())
-        return cast(string) vis.sym.comment().toDString().strip();
+        return buildHoverResponse(vis.sym);
     return "";
 }
 

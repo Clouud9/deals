@@ -31,6 +31,7 @@ import dmd.identifier;
 import core.time, core.thread;
 import std.algorithm;
 import std.logger;
+import dmd.astenums;
 
 static this() {
     auto file = File("deals.log", "w"); // change to a in production
@@ -48,6 +49,7 @@ Tuple!(Identifier, "ident", Loc, "loc")* findIdentifierAt(ref State state, Posit
         false, // bool whitespaceToken
         new ErrorSinkNull(), // ErrorSink errorSink
         &global.compileEnv // const(CompileEnv*) compileEnv  
+        
     );
 
     Token token;
@@ -57,8 +59,7 @@ Tuple!(Identifier, "ident", Loc, "loc")* findIdentifierAt(ref State state, Posit
         string tokenText;
         if (token.value == TOK.identifier && token.ident) {
             tokenText = token.ident.toString().to!string;
-        }
-        else {
+        } else {
             continue;
         }
 
@@ -82,6 +83,10 @@ Tuple!(Identifier, "ident", Loc, "loc")* findIdentifierAt(ref State state, Posit
     return null;
 }
 
+/**
+ * TODO: The HoverVisitor should only find the location of the Hover target, not the source of the symbol.
+ * The found symbol should be processed in order to find the source symbol (i.e. the one with the info we want to know about)
+ */
 extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
     Position position;
     char* uri;
@@ -128,17 +133,19 @@ extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
     }
 
     override void visit(ASTCodegen.VarDeclaration vd) {
-        if (vd.loc.linnum == position.line &&
-            vd.loc.charnum == position.character
-        ) {
-            sym = vd;
-            stop = true;
+        // For when the Type is the hover target
+        if (auto ti = vd.originalType ? vd.originalType.isTypeIdentifier() : null) {
+            if ((cast(Dsymbol) ti).matchesPosition(position)) {
+                
+            }
         }
+
+        // For when the variable name is the hover target (Why would this be a thing? IDK.)
     }
 
     override void visit(ASTCodegen.Expression e) {
         // May put this at the end if binary/other expressions could get triggered like this
-        if (e.loc.linnum == position.line && e.loc.charnum == position.character) {
+        if ((cast(Dsymbol) e).matchesPosition(position)) {
             int derefCount;
 
             if (auto varDecl = e.expToVariable(derefCount)) {
@@ -147,40 +154,38 @@ extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
             }
         } else if (auto binExp = e.isBinExp()) {
             binExp.e1.accept(this);
-            binExp.e2.accept(this);   
+            binExp.e2.accept(this);
         } else if (auto assignExp = e.isAssignExp()) {
             assignExp.e1.accept(this);
             assignExp.e2.accept(this);
+        } else if (auto unExp = e.isUnaExp()) {
+            unExp.e1.accept(this);
         }
     }
+}
+
+bool matchesPosition(Dsymbol sym, immutable Position pos) {
+    if (!sym)
+        return false;
+    return (sym.loc.linnum == pos.line && sym.loc.charnum == pos.character);
 }
 
 // Add parameter for specific response format
 string buildHoverResponse(Dsymbol sym) {
+    switch (sym.dsym) {
+    case DSYM.funcDeclaration:
+        return "Function Declaration";
+    case DSYM.aggregateDeclaration:
+        return "Aggregate Declaration";
+    case DSYM.varDeclaration:
+        return "Var Declaration";
+    case DSYM.enumDeclaration:
+        return "Enum Declaration";
+    case DSYM.structDeclaration:
+        return "Struct Declaration";
+    default:
+        return "";
+    }
+
     return "";
-}
-
-extern (C++) class IdentifierVisitor : SemanticTimeTransitiveVisitor {
-    alias visit = SemanticTimeTransitiveVisitor.visit;
-
-    override void visit(ASTCodegen.Module m) {
-        if (m.members) {
-            foreach (Dsymbol s; *m.members) {
-                if (!s.isModule() && !s.isAnonymous())
-                    s.accept(this);
-            }
-        }
-    }
-
-    override void visit(ASTCodegen.FuncDeclaration fd) {
-        logf("%s %d", fd.ident.toString(), fd.ident.getValue());
-        foreach(pair; fd.localsymtab.tab.asRange()) {
-            auto s = pair.value; 
-            logf("%s %d", s.ident.toString(), s.ident.getValue());
-        }
-    }
-
-    override void visit(ASTCodegen.VarDeclaration vd) {
-        logf("%s %d", vd.ident.toString(), vd.ident.getValue());
-    }
 }
