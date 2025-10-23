@@ -4,7 +4,7 @@ import std.traits;
 import std.typecons;
 import std.sumtype;
 import protocol.capabilities.server;
-import common.hipjson;
+import hip.data.json;
 import std.string;
 import std.meta;
 

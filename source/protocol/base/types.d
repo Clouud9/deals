@@ -3,7 +3,7 @@ import std.typecons;
 import std.sumtype;
 import std.traits;
 import std.meta;
-import common.hipjson;
+import hip.data.json;
 
 enum FoldingRangeType : string {
     Comment = "comment",

@@ -1,7 +1,7 @@
 module analysis.state;
 import protocol.base.error_codes;
 import std.algorithm.mutation;
-import common.hipjson;
+import hip.data.json;
 import protocol.base;
 import std.file;
 import std.path;

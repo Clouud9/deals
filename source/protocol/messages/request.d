@@ -2,7 +2,7 @@ module protocol.messages.request;
 import protocol.messages.message;
 import std.typecons;
 import std.variant;
-import common.hipjson;
+import hip.data.json;
 import std.container.array;
 import std.stdio;
 

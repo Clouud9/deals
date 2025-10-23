@@ -9,7 +9,7 @@ import std.logger;
 import core.stdc.stdio : fgets;
 import core.stdc.stdlib : exit;
 
-import common.hipjson;
+import hip.data.json;
 import protocol.capabilities.server;
 import protocol.messages.response;
 import protocol.base;
@@ -26,41 +26,37 @@ static this() {
 
 // TODO: Define a queue data structure or find one if need be.
 //  Would probably need to implement a blocking queue to prevent threading errors and such
-version (unittest) {
+int main() {
+    log("Starting Deals");
+    bool initialize_received = false;
+    State state;
 
-} else {
-    int main() {
-        log("Starting Deals");
-        bool initialize_received = false;
-        State state;
-
-        /*
-        debug {
-            import core.sys.windows.windows;
-            import core.thread, core.time;
-            while (IsDebuggerPresent() == false) {
-                Thread.sleep(msecs(5));
-            }
+    /*
+    debug {
+        import core.sys.windows.windows;
+        import core.thread, core.time;
+        while (IsDebuggerPresent() == false) {
+            Thread.sleep(msecs(5));
         }
-        */
-
-        while (true) {
-            string header, json;
-            bool read = read_message(header, json);
-
-            if (!read)
-                continue; // Not sure this is what I want to do
-
-            //writeln("HEADER: ", header);
-            //writeln("JSON: ", json);
-            string message = header.strip ~ "\r\n\r\n" ~ json;
-            string method, content;
-            //string message, method, content;
-            decodeMessage(message, method, content); // Implement Error Handling for this function
-            handleMessage(method, content, state);
-        }
-        return 0;
     }
+    */
+
+    while (true) {
+        string header, json;
+        bool read = read_message(header, json);
+
+        if (!read)
+            continue; // Not sure this is what I want to do
+
+        //writeln("HEADER: ", header);
+        //writeln("JSON: ", json);
+        string message = header.strip ~ "\r\n\r\n" ~ json;
+        string method, content;
+        //string message, method, content;
+        decodeMessage(message, method, content); // Implement Error Handling for this function
+        handleMessage(method, content, state);
+    }
+    return 0;
 }
 
 void handleMessage(string method, string content, ref State state) {

@@ -13,7 +13,11 @@
     "copyright": "Copyright © 2025, Clouudy",
     "dependencies": {
         "dmd": "~>2.111.0",
-        "dub": "~>1.40.0"
+        "dub": "~>1.40.0",
+        "hipjson": "~>1.0.0"
+    },
+    "subConfigurations": {
+        "hipjson": "default"
     },
     "description": "A Language Server based on the DMD Frontend",
     "license": "BSL-1.0",

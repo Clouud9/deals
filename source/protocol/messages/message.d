@@ -1,6 +1,6 @@
 module protocol.messages.message;
 import std.variant;
-import common.hipjson;
+import hip.data.json;
 
 mixin template Message() {
     string jsonrpc = "2.0";

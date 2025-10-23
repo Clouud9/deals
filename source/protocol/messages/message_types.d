@@ -1,6 +1,6 @@
 module protocol.messages.message_types;
 import protocol.base.types;
-import common.hipjson;
+import hip.data.json;
 import std.sumtype;
 import std.variant;
 
