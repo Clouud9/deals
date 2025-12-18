@@ -32,6 +32,7 @@ import core.time, core.thread;
 import std.algorithm;
 import std.logger;
 import dmd.astenums;
+import dmd.ast_node;
 
 static this() {
     auto file = File("deals.log", "w"); // change to a in production
@@ -83,6 +84,11 @@ Tuple!(Identifier, "ident", Loc, "loc")* findIdentifierAt(ref State state, Posit
     return null;
 }
 
+enum NodeType {
+    TypeIdent,
+    Symbol
+}
+
 /**
  * TODO: The HoverVisitor should only find the location of the Hover target, not the source of the symbol.
  * The found symbol should be processed in order to find the source symbol (i.e. the one with the info we want to know about)
@@ -91,7 +97,8 @@ extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
     Position position;
     char* uri;
     bool stop = false;
-    Dsymbol sym;
+    ASTNode node;
+    NodeType type;
 
     this(Position pos, char* uri) {
         this.position = pos;
@@ -136,11 +143,18 @@ extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
         // For when the Type is the hover target
         if (auto ti = vd.originalType ? vd.originalType.isTypeIdentifier() : null) {
             if ((cast(Dsymbol) ti).matchesPosition(position)) {
-                
+                node = vd.type;
+                type = NodeType.TypeIdent;
+                stop = true;
             }
         }
 
         // For when the variable name is the hover target (Why would this be a thing? IDK.)
+        if ((cast(Dsymbol) vd).matchesPosition(position)) {
+            node = vd;
+            type = NodeType.Symbol;
+            stop = true;
+        }
     }
 
     override void visit(ASTCodegen.Expression e) {
@@ -149,7 +163,8 @@ extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
             int derefCount;
 
             if (auto varDecl = e.expToVariable(derefCount)) {
-                sym = varDecl;
+                node = e;
+                type = NodeType.Symbol;
                 stop = true;
             }
         } else if (auto binExp = e.isBinExp()) {
@@ -171,19 +186,14 @@ bool matchesPosition(Dsymbol sym, immutable Position pos) {
 }
 
 // Add parameter for specific response format
-string buildHoverResponse(Dsymbol sym) {
-    switch (sym.dsym) {
-    case DSYM.funcDeclaration:
-        return "Function Declaration";
-    case DSYM.aggregateDeclaration:
-        return "Aggregate Declaration";
-    case DSYM.varDeclaration:
-        return "Var Declaration";
-    case DSYM.enumDeclaration:
-        return "Enum Declaration";
-    case DSYM.structDeclaration:
-        return "Struct Declaration";
-    default:
+string buildHoverResponse(ASTNode node, NodeType type) {
+    if (type == NodeType.Symbol) {
+        Dsymbol sym = cast(Dsymbol) node;
+        if (auto vd = sym.isVarDeclaration()) {
+            if (auto ts = vd.type.isTypeStruct())
+                return ts.sym.comment().to!string;
+        }
+    } else {
         return "";
     }
 

@@ -104,15 +104,15 @@ string serveHover(ref State state, string uri, Position position) {
     auto vis = new HoverVisitor(hoverPos, uri.normalizeUri.toCString().ptr);
     mod.accept(vis);
 
-    if (vis.sym)
-        logf("Symbol %s found", vis.sym.ident.toString());
+    if (vis.node)
+        logf("Symbol %s found", result.ident.toString());
     else logf("Symbol %s not found", result.ident.toString());
 
     global.endGagging(errorCount);
 
     import dmd.root.string;
-    if (vis.sym && vis.sym.comment())
-        return buildHoverResponse(vis.sym);
+    if (vis.node) 
+        return buildHoverResponse(vis.node, vis.type);
     return "";
 }
 
