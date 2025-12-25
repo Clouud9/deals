@@ -110,9 +110,7 @@ string serveHover(ref State state, string uri, Position position) {
 
     global.endGagging(errorCount);
 
-    import dmd.root.string;
-    if (vis.node) 
-        return buildHoverResponse(vis.node, vis.type);
+    return vis.doc_string;
     return "";
 }
 

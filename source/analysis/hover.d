@@ -33,6 +33,8 @@ import std.algorithm;
 import std.logger;
 import dmd.astenums;
 import dmd.ast_node;
+import std.string;
+import std.regex.internal.parser;
 
 static this() {
     auto file = File("deals.log", "w"); // change to a in production
@@ -84,98 +86,229 @@ Tuple!(Identifier, "ident", Loc, "loc")* findIdentifierAt(ref State state, Posit
     return null;
 }
 
-enum NodeType {
-    TypeIdent,
-    Symbol
-}
-
 /**
  * TODO: The HoverVisitor should only find the location of the Hover target, not the source of the symbol.
  * The found symbol should be processed in order to find the source symbol (i.e. the one with the info we want to know about)
  */
-extern (C++) class HoverVisitor : SemanticTimeTransitiveVisitor {
-    Position position;
+extern (C++) class HoverVisitor : SemanticTimePermissiveVisitor {
+    const Position position;
     char* uri;
     bool stop = false;
     ASTNode node;
-    NodeType type;
+    string doc_string;
+    Position newPos;
 
     this(Position pos, char* uri) {
         this.position = pos;
         this.uri = uri;
+        newPos = position;
     }
 
-    alias visit = SemanticTimeTransitiveVisitor.visit;
+    alias visit = SemanticTimePermissiveVisitor.visit; 
 
-    /** 
-     * Only local checks for now, likely don't need them
-     *  since types contain references to their parent modules anyways
-     */
     override void visit(ASTCodegen.Module m) {
+        if (stop)
+            return;
+            
         if (m.members) {
             foreach (s; *m.members) {
                 if (stop)
                     return;
-
-                if (!s.isModule() && !s.isAnonymous())
-                    s.accept(this);
+                s.accept(this);
             }
         }
-    }
-
-    /** 
-     * For Class, Enum, Interface, etc. types found in parameters,
-     *  and for identifiers inside of the function
-     */
-    override void visit(ASTCodegen.FuncDeclaration fd) {
-        if (fd.parameters) {
-            foreach (p; *fd.parameters) {
-                if (stop)
-                    return;
-                p.accept(this);
-            }
-        }
-
-        fd.fbody.accept(this);
     }
 
     override void visit(ASTCodegen.VarDeclaration vd) {
-        // For when the Type is the hover target
-        if (auto ti = vd.originalType ? vd.originalType.isTypeIdentifier() : null) {
-            if ((cast(Dsymbol) ti).matchesPosition(position)) {
-                node = vd.type;
-                type = NodeType.TypeIdent;
-                stop = true;
-            }
-        }
+        if (!vd.ident.toString().endsWith("__initZ"))
+            log("VAR DECL " ~ vd.ident.toString());
+    }
 
-        // For when the variable name is the hover target (Why would this be a thing? IDK.)
-        if ((cast(Dsymbol) vd).matchesPosition(position)) {
-            node = vd;
-            type = NodeType.Symbol;
-            stop = true;
+    // TODO: Parameter Hovering
+    override void visit(ASTCodegen.FuncDeclaration fd) {
+        log("FUNC DECL " ~ fd.ident.toString());
+        fd.fbody.accept(this);
+    }
+
+    override void visit(ASTCodegen.IfStatement ifs) {
+        log("IF STMT " ~ ifs.loc.linnum().to!string ~ " " ~ ifs.loc.charnum().to!string);
+
+        ifs.condition.accept(this);
+
+        if (!ifs.ifbody.isScopeStatement())
+            newPos.line++;
+
+        ifs.ifbody.accept(this);
+
+        if (ifs.elsebody) {
+            ifs.elsebody.accept(this);
+            if (!ifs.elsebody.isScopeStatement())
+                newPos.line++;
         }
     }
 
-    override void visit(ASTCodegen.Expression e) {
-        // May put this at the end if binary/other expressions could get triggered like this
-        if ((cast(Dsymbol) e).matchesPosition(position)) {
-            int derefCount;
+    // While Statement is lowered into a for statement 
+    override void visit(ASTCodegen.ForStatement fs) {
+        log("FOR STMT " ~ fs.loc.linnum.to!string ~ " " ~ fs.loc.charnum.to!string);
+        fs.condition.accept(this);
 
-            if (auto varDecl = e.expToVariable(derefCount)) {
-                node = e;
-                type = NodeType.Symbol;
-                stop = true;
-            }
-        } else if (auto binExp = e.isBinExp()) {
-            binExp.e1.accept(this);
-            binExp.e2.accept(this);
-        } else if (auto assignExp = e.isAssignExp()) {
-            assignExp.e1.accept(this);
-            assignExp.e2.accept(this);
-        } else if (auto unExp = e.isUnaExp()) {
-            unExp.e1.accept(this);
+        if (!fs._body.isScopeStatement())
+            newPos.line++;
+
+        fs._body.accept(this);
+    }
+
+    override void visit(ASTCodegen.ForeachStatement fes) {
+        log("FOREACH STMNT");
+        fes.key.accept(this);
+        fes.value.accept(this);
+
+        if (!fes._body.isScopeStatement())
+            newPos.line++;
+
+        fes._body.accept(this);
+    }
+
+    override void visit(ASTCodegen.ForeachRangeStatement fers) {
+        fers.key.accept(this);
+
+        if (!fers._body.isScopeStatement())
+            newPos.line++;
+
+        fers._body.accept(this);
+    }
+
+    override void visit(ASTCodegen.WhileStatement ws) {
+        log("WHILE STMT");
+        ws.condition.accept(this);
+
+        if (!ws._body.isScopeStatement()) {
+            log("NON-SCOPE WHILE BODY");
+            newPos.line++;
         }
+
+        ws._body.accept(this);
+    }  
+
+    override void visit(ASTCodegen.DoStatement ds) {
+        ds.condition.accept(this);
+
+         if (!ds._body.isScopeStatement())
+            newPos.line++;
+
+        ds._body.accept(this);
+    }
+
+    // Inside of a function body is a CompoundStatement
+    override void visit(ASTCodegen.CompoundStatement cs) {
+        log("CMPND STMNT");
+        foreach (statement; *(cs.statements))
+            statement.accept(this);
+    }
+
+    override void visit(ASTCodegen.ScopeStatement ss) {
+        log("SCOPE STMNT");
+        ss.statement.accept(this);
+    }
+
+    // Visit statements to find expressions within them
+    override void visit(ASTCodegen.ExpStatement es) {
+        if (stop)
+            return;
+            
+        log("EXP STATEMENT");
+        if (es.exp) {
+            checkExpression(es.exp);
+        }
+
+        es.exp.accept(this);
+    }
+
+    override void visit(ASTCodegen.ErrorExp ee) {
+        log("ERROR EXP");
+    }
+
+    override void visit(ASTCodegen.CallExp ce) {
+        if ((cast(Dsymbol) ce).matchesPosition(newPos)) {
+            doc_string = ce.f.comment().to!string;
+            stop = true;
+        }
+
+        if (ce.arguments) {
+            foreach(arg; *(ce.arguments)) {
+                arg.accept(this);
+            }
+        }
+    }
+
+    override void visit(ASTCodegen.AssignExp ae) {
+        log("ASSIGN EXP");
+        ae.e1.accept(this);
+        ae.e2.accept(this);
+    }
+
+    override void visit(ASTCodegen.VarExp ve) {
+        log("VAR EXP");
+        auto se = cast(SymbolExp) ve;
+        log("VAR EXP: " ~ se.loc.linnum.to!string ~ " " ~ se.loc.charnum.to!string);
+    }
+
+    override void visit(ASTCodegen.DotVarExp dve) {
+        import std.string;
+        log("DOT VAR EXP " ~ dve.toString().to!string ~ " " ~ dve.loc.linnum().to!string ~ " " ~ dve.loc.charnum().to!string);
+        dve.e1.accept(this);
+        log("A IDX " ~ (dve.toString().to!string).indexOf(".").to!string);
+        dve.var.accept(this);
+    }
+
+    override void visit(ASTCodegen.Expression e) {
+        if (auto declExp = e.isDeclarationExp())
+            declExp.accept(this);
+    }
+
+    // TODO: Check if other declaration types exist
+    override void visit(ASTCodegen.DeclarationExp de) {
+        log("DECL EXPS");
+        if (auto vd = de.declaration.isVarDeclaration()) {
+            log("DECL EXP: VAR DECL " ~ vd.ident.toString());
+            if (containsLoc(vd)) {
+                if (auto ts = vd.type.isTypeStruct()) {
+                    doc_string = ts.sym.comment().to!string;
+                    stop = true;
+                } else if (auto tc = vd.type.isTypeClass()) {
+                    doc_string = tc.sym.comment().to!string;
+                } else if (auto te = vd.type.isTypeEnum()) {
+                    doc_string = tc.sym.comment().to!string;
+                } else if (auto ti = vd.type.isTypeInterface()) {
+                    doc_string = ti.sym.comment().to!string;
+                }
+            }
+        }
+    }
+    
+    void checkExpression(ASTCodegen.Expression e) {
+        log("EXPRESSION");
+        if (auto dv = e.isDotVarExp()) {
+            if ((cast(Dsymbol) dv).matchesPosition(newPos)) {
+                log("DOTVAR MATCH!");
+                node = dv;
+                stop = true;
+                return;
+            }
+            
+            // Check both sides of the dot expression
+            if (dv.e1) {
+                checkExpression(dv.e1);
+            }
+        }
+        // Add checks for other expression types as needed
+    }
+
+    bool containsLoc(ASTCodegen.VarDeclaration vd) {
+        if (auto ti = vd.originalType ? vd.originalType.isTypeIdentifier() : null)
+            if ((cast(Dsymbol) ti).matchesPosition(newPos)) return true;
+        
+        return (cast(Dsymbol) vd).matchesPosition(newPos);
     }
 }
 
@@ -185,17 +318,6 @@ bool matchesPosition(Dsymbol sym, immutable Position pos) {
     return (sym.loc.linnum == pos.line && sym.loc.charnum == pos.character);
 }
 
-// Add parameter for specific response format
-string buildHoverResponse(ASTNode node, NodeType type) {
-    if (type == NodeType.Symbol) {
-        Dsymbol sym = cast(Dsymbol) node;
-        if (auto vd = sym.isVarDeclaration()) {
-            if (auto ts = vd.type.isTypeStruct())
-                return ts.sym.comment().to!string;
-        }
-    } else {
-        return "";
-    }
-
-    return "";
+bool matchesPosition(Loc loc, immutable Position pos) {
+    return (loc.linnum == pos.line && loc.charnum == pos.character);
 }
