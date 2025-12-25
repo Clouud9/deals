@@ -23,7 +23,6 @@
     "license": "BSL-1.0",
     "name": "deals",
     "sourcePaths": [
-        "test",
         "source"
     ],
     "targetType": "executable"
