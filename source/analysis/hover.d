@@ -278,9 +278,7 @@ extern (C++) class HoverVisitor : SemanticTimePermissiveVisitor {
                 } else if (auto tc = vd.type.isTypeClass()) {
                     doc_string = tc.sym.comment().to!string;
                 } else if (auto te = vd.type.isTypeEnum()) {
-                    doc_string = tc.sym.comment().to!string;
-                } else if (auto ti = vd.type.isTypeInterface()) {
-                    doc_string = ti.sym.comment().to!string;
+                    doc_string = te.sym.comment().to!string;
                 }
             }
         }
