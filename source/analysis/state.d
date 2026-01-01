@@ -114,6 +114,10 @@ string serveHover(ref State state, string uri, Position position) {
     return "";
 }
 
+void serveGoto(ref State state) {
+
+}
+
 // TODO: Check if this works for Windows, Linux, etc.
 string normalizeUri(string uri) {
     return uri.stripLeft("file:///").asNormalizedPath().array;
